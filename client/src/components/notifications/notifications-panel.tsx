@@ -269,7 +269,7 @@ export function NotificationsPanel({ open, onClose }: NotificationsPanelProps) {
 
   return (
     <Sheet open={open} onOpenChange={onClose}>
-      <SheetContent className="w-[90vw] sm:w-[420px] md:w-[480px] lg:w-[540px] max-w-[600px] bg-background border-l border-border">
+      <SheetContent className="w-[90vw] sm:w-[420px] md:w-[480px] lg:w-[540px] max-w-[600px] bg-background border-l border-border flex flex-col h-full">
         <SheetHeader className="border-b border-border pb-6">
           <SheetTitle className="flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -315,7 +315,7 @@ export function NotificationsPanel({ open, onClose }: NotificationsPanelProps) {
 
         </SheetHeader>
 
-        <div className="flex-1 overflow-y-auto py-6 space-y-4">
+        <div className="flex-1 overflow-y-auto py-6 space-y-4 max-h-[calc(100vh-12rem)] scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 dark:scrollbar-thumb-gray-600 dark:scrollbar-track-gray-800">
           <NotificationPermission />
           {repositionNotifications.length > 0 && (
             <div className="space-y-3">

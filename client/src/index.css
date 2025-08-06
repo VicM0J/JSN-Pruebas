@@ -2,6 +2,48 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Estilos personalizados para scrollbar */
+.scrollbar-thin {
+  scrollbar-width: thin;
+  scrollbar-color: rgb(156 163 175) rgb(243 244 246);
+}
+
+.scrollbar-thin::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-track {
+  background: rgb(243 244 246);
+  border-radius: 3px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background: rgb(156 163 175);
+  border-radius: 3px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb:hover {
+  background: rgb(107 114 128);
+}
+
+/* Estilos para tema oscuro */
+.dark .scrollbar-thin {
+  scrollbar-color: rgb(75 85 99) rgb(31 41 55);
+}
+
+.dark .scrollbar-thin::-webkit-scrollbar-track {
+  background: rgb(31 41 55);
+}
+
+.dark .scrollbar-thin::-webkit-scrollbar-thumb {
+  background: rgb(75 85 99);
+}
+
+.dark .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+  background: rgb(107 114 128);
+}
+
 /* Animaciones personalizadas mejoradas */
 @keyframes spin-in {
   0% {
