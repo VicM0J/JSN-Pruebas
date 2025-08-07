@@ -22,7 +22,7 @@ import {
 import { 
   Factory, 
   Home, 
-  Package, 
+  Headphones, 
   Bell, 
   History, 
   Plus, 
@@ -120,7 +120,8 @@ export function CustomSidebar({ onShowNotifications, onCreateOrder, onCreateRepo
       admin: "Admin",
       operaciones: "Operaciones",
       almacen: "Almacén",
-      diseño: "Diseño"
+      diseño: "Diseño",
+      sistemas: "Sistemas"
     };
     return names[area] || area;
   };
@@ -145,7 +146,8 @@ export function CustomSidebar({ onShowNotifications, onCreateOrder, onCreateRepo
       admin: "bg-[#504b78] text-white",
       operaciones: "bg-[#8c69a5] text-white",
       almacen: "bg-[#504b78] text-white",
-      diseño: "bg-[#de8fd9] text-[#233154]"
+      diseño: "bg-[#de8fd9] text-[#233154]",
+      sistemas: "bg-[#1e40af] text-white"
     };
     return colors[area] || "bg-gray-500 text-white";
   };
@@ -208,23 +210,23 @@ export function CustomSidebar({ onShowNotifications, onCreateOrder, onCreateRepo
                     e.preventDefault();
                     e.stopPropagation();
                     const wasCollapsed = state === 'collapsed';
-                    setLocation('/orders');
+                    setLocation('/sistemas');
                     // Mantener estado de colapso
                     if (wasCollapsed) {
                       setTimeout(() => setOpen(false), 1);
                     }
                   }}
                   asChild
-                  isActive={location === '/orders'}
-                  className={`h-10 transition-all duration-200 hover:bg-gradient-to-r hover:from-[#8c69a5]/10 hover:to-[#504b78]/10 hover:scale-[1.02] hover:shadow-sm ${
-                    location === '/orders' 
-                      ? 'bg-gradient-to-r from-[#8c69a5]/20 to-[#504b78]/20 text-[#8c69a5] border-r-2 border-[#8c69a5] font-medium shadow-sm' 
+                  isActive={location === '/sistemas'}
+                  className={`h-10 transition-all duration-200 hover:bg-gradient-to-r hover:from-[#1e40af]/10 hover:to-[#3b82f6]/10 hover:scale-[1.02] hover:shadow-sm ${
+                    location === '/sistemas' 
+                      ? 'bg-gradient-to-r from-[#1e40af]/20 to-[#3b82f6]/20 text-[#1e40af] border-r-2 border-[#1e40af] font-medium shadow-sm' 
                       : ''
                   }`}
                 >
                   <div className="flex items-center gap-2 w-full h-full px-3">
-                    <Package className="h-4 w-4 transition-transform duration-200 group-hover:scale-110" />
-                    <span className="transition-colors duration-200 group-data-[collapsible=icon]:hidden">Pedidos</span>
+                    <Headphones className="h-4 w-4 transition-transform duration-200 group-hover:scale-110" />
+                    <span className="transition-colors duration-200 group-data-[collapsible=icon]:hidden">Sistemas</span>
                   </div>
                 </SidebarMenuButton>
               </SidebarMenuItem>

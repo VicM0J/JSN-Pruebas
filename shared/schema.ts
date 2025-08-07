@@ -4,7 +4,7 @@ import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 import { InferSelectModel, InferInsertModel } from "drizzle-orm";
 
-export const areaEnum = pgEnum("area", ["patronaje", "corte", "bordado", "ensamble", "plancha", "calidad", "operaciones", "admin", "almacen", "diseño", "envios"]);
+export const areaEnum = pgEnum("area", ["patronaje", "corte", "bordado", "ensamble", "plancha", "calidad", "operaciones", "admin", "almacen", "diseño", "envios", "sistemas"]);
 export const repositionTypeEnum = pgEnum("reposition_type", ["repocision", "reproceso"]);
 export const urgencyEnum = pgEnum("urgency", ["urgente", "intermedio", "poco_urgente"]);
 export const repositionStatusEnum = pgEnum("reposition_status", ["pendiente", "aprobado", "rechazado", "completado", "eliminado", "cancelado"]);
@@ -31,6 +31,9 @@ export const notificationTypeEnum = pgEnum("notification_type", [
   "reposition_reactivated"
 ]);
 export const materialStatusEnum = pgEnum("material_status", ["disponible", "falta_parcial", "no_disponible"]);
+export const ticketStatusEnum = pgEnum("ticket_status", ["pendiente", "aprobado", "rechazado", "finalizado", "cancelado"]);
+export const ticketPriorityEnum = pgEnum("ticket_priority", ["baja", "media", "alta", "critica"]);
+export const ticketCategoryEnum = pgEnum("ticket_category", ["soporte_tecnico", "solicitud_acceso", "reporte_error", "mejora_sistema", "otro"]);
 
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
@@ -248,6 +251,43 @@ export const documents = pgTable("documents", {
   orderId: integer("order_id"),
   repositionId: integer("reposition_id"),
   uploadedBy: integer("uploaded_by").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const supportTickets = pgTable("support_tickets", {
+  id: serial("id").primaryKey(),
+  folio: text("folio").notNull().unique(),
+  title: text("title").notNull(),
+  description: text("description").notNull(),
+  category: ticketCategoryEnum("category").notNull(),
+  priority: ticketPriorityEnum("priority").notNull().default("media"),
+  status: ticketStatusEnum("status").notNull().default("pendiente"),
+  createdBy: integer("created_by").notNull(),
+  assignedTo: integer("assigned_to"),
+  resolvedBy: integer("resolved_by"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  resolvedAt: timestamp("resolved_at"),
+  resolutionNotes: text("resolution_notes"),
+});
+
+export const ticketHistory = pgTable("ticket_history", {
+  id: serial("id").primaryKey(),
+  ticketId: integer("ticket_id").notNull(),
+  action: text("action").notNull(),
+  description: text("description").notNull(),
+  oldStatus: ticketStatusEnum("old_status"),
+  newStatus: ticketStatusEnum("new_status"),
+  userId: integer("user_id").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const ticketComments = pgTable("ticket_comments", {
+  id: serial("id").primaryKey(),
+  ticketId: integer("ticket_id").notNull(),
+  userId: integer("user_id").notNull(),
+  comment: text("comment").notNull(),
+  isInternal: boolean("is_internal").notNull().default(false),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -502,11 +542,21 @@ export type InsertAgendaEvent = typeof agendaEvents.$inferInsert;
 export const insertAgendaEventSchema = createInsertSchema(agendaEvents);
 export type InsertAgendaEventSchema = z.infer<typeof insertAgendaEventSchema>;
 
-export const areas = ['patronaje', 'corte', 'bordado', 'ensamble', 'plancha', 'calidad', 'operaciones', 'envios', 'almacen', 'admin', 'diseño'] as const;
-export type Area = "patronaje" | "corte" | "bordado" | "ensamble" | "plancha" | "calidad" | "operaciones" | "admin" | "almacen" | "diseño" | "envios";
+export const areas = ['patronaje', 'corte', 'bordado', 'ensamble', 'plancha', 'calidad', 'operaciones', 'envios', 'almacen', 'admin', 'diseño', 'sistemas'] as const;
+export type Area = "patronaje" | "corte" | "bordado" | "ensamble" | "plancha" | "calidad" | "operaciones" | "admin" | "almacen" | "diseño" | "envios" | "sistemas";
 export type MaterialStatus = "disponible" | "falta_parcial" | "no_disponible";
 export type RepositionMaterial = InferSelectModel<typeof repositionMaterials>;
 export type InsertRepositionMaterial = InferInsertModel<typeof repositionMaterials>;
 export type RepositionType = "repocision" | "reproceso";
 export type Urgency = "urgente" | "intermedio" | "poco_urgente";
 export type RepositionStatus = "pendiente" | "aprobado" | "rechazado" | "completado" | "eliminado" | "cancelado";
+export type TicketStatus = "pendiente" | "aprobado" | "rechazado" | "finalizado" | "cancelado";
+export type TicketPriority = "baja" | "media" | "alta" | "critica";
+export type TicketCategory = "soporte_tecnico" | "solicitud_acceso" | "reporte_error" | "mejora_sistema" | "otro";
+
+export type SupportTicket = InferSelectModel<typeof supportTickets>;
+export type InsertSupportTicket = InferInsertModel<typeof supportTickets>;
+export type TicketHistory = InferSelectModel<typeof ticketHistory>;
+export type InsertTicketHistory = InferInsertModel<typeof ticketHistory>;
+export type TicketComment = InferSelectModel<typeof ticketComments>;
+export type InsertTicketComment = InferInsertModel<typeof ticketComments>;
