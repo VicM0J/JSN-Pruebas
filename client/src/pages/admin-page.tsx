@@ -619,7 +619,7 @@ export default function AdminPage() {
       </div>
 
         {/* Gestión de Usuarios Mejorada */}
-        <Card>
+        <Card className="border-0 shadow-lg bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm dark:border-slate-700">
           <CardHeader>
             <div className="flex items-center justify-between">
               <CardTitle className="flex items-center space-x-2">
@@ -689,67 +689,67 @@ export default function AdminPage() {
               </Dialog>
             </div>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-0">
             {users.length > 0 ? (
-              <div className="rounded-lg border">
+              <div className="max-h-96 overflow-y-auto border-t dark:border-slate-700">
                 <Table>
-                  <TableHeader>
-                    <TableRow className="bg-gray-50">
-                      <TableHead className="font-semibold">ID</TableHead>
-                      <TableHead className="font-semibold">Usuario</TableHead>
-                      <TableHead className="font-semibold">Nombre</TableHead>
-                      <TableHead className="font-semibold">Área</TableHead>
-                      <TableHead className="font-semibold text-center">Acciones</TableHead>
+                  <TableHeader className="sticky top-0 z-10">
+                    <TableRow className="bg-gray-50 dark:bg-slate-800 border-b dark:border-slate-700">
+                      <TableHead className="font-semibold text-gray-900 dark:text-gray-100">ID</TableHead>
+                      <TableHead className="font-semibold text-gray-900 dark:text-gray-100">Usuario</TableHead>
+                      <TableHead className="font-semibold text-gray-900 dark:text-gray-100">Nombre</TableHead>
+                      <TableHead className="font-semibold text-gray-900 dark:text-gray-100">Área</TableHead>
+                      <TableHead className="font-semibold text-center text-gray-900 dark:text-gray-100">Acciones</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {users.map(u => (
-                      <TableRow key={u.id} className="hover:bg-gray-50">
-                        <TableCell className="font-medium">#{u.id}</TableCell>
-                        <TableCell>
+                      <TableRow key={u.id} className="hover:bg-gray-50 dark:hover:bg-slate-700 border-b dark:border-slate-700">
+                        <TableCell className="font-medium text-gray-900 dark:text-gray-100 px-4 py-3">#{u.id}</TableCell>
+                        <TableCell className="px-4 py-3">
                           <div className="flex items-center space-x-2">
-                            <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                              <span className="text-blue-600 font-medium text-sm">
+                            <div className="w-8 h-8 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center">
+                              <span className="text-blue-600 dark:text-blue-300 font-medium text-sm">
                                 {u.username.charAt(0).toUpperCase()}
                               </span>
                             </div>
-                            <span className="font-medium">{u.username}</span>
+                            <span className="font-medium text-gray-900 dark:text-gray-100">{u.username}</span>
                           </div>
                         </TableCell>
-                        <TableCell>{u.name}</TableCell>
-                        <TableCell>
+                        <TableCell className="text-gray-900 dark:text-gray-100 px-4 py-3">{u.name}</TableCell>
+                        <TableCell className="px-4 py-3">
                           <Badge className={getAreaBadgeColor(u.area)}>
                             {getAreaDisplayName(u.area)}
                           </Badge>
                         </TableCell>
-                        <TableCell>
+                        <TableCell className="px-4 py-3">
                           <div className="flex justify-center space-x-2">
                             <Button 
                               size="sm" 
                               variant="outline" 
                               onClick={() => openEditModal(u)}
-                              className="flex items-center space-x-1"
+                              className="flex items-center space-x-1 h-8 px-2"
                             >
                               <Edit2 className="w-3 h-3" />
-                              <span>Editar</span>
+                              <span className="text-xs">Editar</span>
                             </Button>
                             <Button 
                               size="sm" 
                               variant="outline" 
                               onClick={() => { setSelectedUser(u); setShowResetModal(true); }}
-                              className="flex items-center space-x-1"
+                              className="flex items-center space-x-1 h-8 px-2"
                             >
                               <RotateCcw className="w-3 h-3" />
-                              <span>Reset</span>
+                              <span className="text-xs">Reset</span>
                             </Button>
                             <Button 
                               size="sm" 
                               variant="destructive" 
                               onClick={() => deleteUserMutation.mutate(u.id)}
-                              className="flex items-center space-x-1"
+                              className="flex items-center space-x-1 h-8 px-2"
                             >
                               <Trash2 className="w-3 h-3" />
-                              <span>Eliminar</span>
+                              <span className="text-xs">Eliminar</span>
                             </Button>
                           </div>
                         </TableCell>
@@ -759,82 +759,82 @@ export default function AdminPage() {
                 </Table>
               </div>
             ) : (
-              <div className="text-center py-8">
+              <div className="text-center py-8 px-6">
                 <Users className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-                <p className="text-gray-500">No hay usuarios registrados.</p>
+                <p className="text-gray-500 dark:text-gray-400">No hay usuarios registrados.</p>
               </div>
             )}
           </CardContent>
         </Card>
 
         {/* System Configuration Mejorada */}
-      <Card className="overflow-hidden">
+      <Card className="border-0 shadow-lg bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm dark:border-slate-700 overflow-hidden">
         <CardHeader className="bg-gradient-to-r from-slate-50 to-blue-50 dark:from-slate-800 dark:to-blue-900">
-          <CardTitle className="flex items-center space-x-2">
+          <CardTitle className="flex items-center space-x-2 text-gray-800 dark:text-gray-200">
             <Settings className="h-5 w-5" />
             <span>Configuración del Sistema</span>
           </CardTitle>
         </CardHeader>
         <CardContent className="p-0">
-          <div className="grid grid-cols-1 lg:grid-cols-3 divide-y lg:divide-y-0 lg:divide-x divide-gray-200">
+          <div className="grid grid-cols-1 lg:grid-cols-3 divide-y lg:divide-y-0 lg:divide-x divide-gray-200 dark:divide-gray-700">
             {/* Información del Sistema */}
             <div className="p-6 space-y-4">
-              <h3 className="font-semibold text-gray-800 flex items-center gap-2">
-                <Database className="h-4 w-4 text-blue-600" />
+              <h3 className="font-semibold text-gray-800 dark:text-gray-200 flex items-center gap-2">
+                <Database className="h-4 w-4 text-blue-600 dark:text-blue-400" />
                 Información del Sistema
               </h3>
               <div className="space-y-3">
-                <div className="flex justify-between items-center p-3 bg-gradient-to-r from-blue-50 to-blue-100 rounded-lg border border-blue-200">
+                <div className="flex justify-between items-center p-3 bg-gradient-to-r from-blue-50 to-blue-100 dark:from-blue-950/30 dark:to-blue-900/30 rounded-lg border border-blue-200 dark:border-blue-700">
                   <div className="flex items-center space-x-3">
                     <div className="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center">
                       <Package className="text-white h-4 w-4" />
                     </div>
                     <div>
-                      <span className="text-xs font-medium text-gray-800">Empresa</span>
-                      <p className="text-xs text-gray-600">Sistema de gestión</p>
+                      <span className="text-xs font-medium text-gray-800 dark:text-gray-200">Empresa</span>
+                      <p className="text-xs text-gray-600 dark:text-gray-400">Sistema de gestión</p>
                     </div>
                   </div>
-                  <span className="text-sm font-bold text-blue-700">JASANA</span>
+                  <span className="text-sm font-bold text-blue-700 dark:text-blue-300">JASANA</span>
                 </div>
-                <div className="flex justify-between items-center p-3 bg-gradient-to-r from-green-50 to-green-100 rounded-lg border border-green-200">
+                <div className="flex justify-between items-center p-3 bg-gradient-to-r from-green-50 to-green-100 dark:from-green-950/30 dark:to-green-900/30 rounded-lg border border-green-200 dark:border-green-700">
                   <div className="flex items-center space-x-3">
                     <div className="w-8 h-8 bg-green-500 rounded-lg flex items-center justify-center">
                       <Activity className="text-white h-4 w-4" />
                     </div>
                     <div>
-                      <span className="text-xs font-medium text-gray-800">Áreas activas</span>
-                      <p className="text-xs text-gray-600">Módulos habilitados</p>
+                      <span className="text-xs font-medium text-gray-800 dark:text-gray-200">Áreas activas</span>
+                      <p className="text-xs text-gray-600 dark:text-gray-400">Módulos habilitados</p>
                     </div>
                   </div>
-                  <span className="text-sm font-bold text-green-700">11 áreas</span>
+                  <span className="text-sm font-bold text-green-700 dark:text-green-300">11 áreas</span>
                 </div>
-                <div className="flex justify-between items-center p-3 bg-gradient-to-r from-purple-50 to-purple-100 rounded-lg border border-purple-200">
+                <div className="flex justify-between items-center p-3 bg-gradient-to-r from-purple-50 to-purple-100 dark:from-purple-950/30 dark:to-purple-900/30 rounded-lg border border-purple-200 dark:border-purple-700">
                   <div className="flex items-center space-x-3">
                     <div className="w-8 h-8 bg-purple-500 rounded-lg flex items-center justify-center">
                       <Database className="text-white h-4 w-4" />
                     </div>
                     <div>
-                      <span className="text-xs font-medium text-gray-800">Base de datos</span>
-                      <p className="text-xs text-gray-600">Estado de conexión</p>
+                      <span className="text-xs font-medium text-gray-800 dark:text-gray-200">Base de datos</span>
+                      <p className="text-xs text-gray-600 dark:text-gray-400">Estado de conexión</p>
                     </div>
                   </div>
-                  <span className="text-sm font-bold text-green-600">Conectada</span>
+                  <span className="text-sm font-bold text-green-600 dark:text-green-400">Conectada</span>
                 </div>
               </div>
             </div>
 
             {/* Respaldos del Sistema */}
             <div className="p-6 space-y-4">
-              <h3 className="font-semibold text-gray-800 flex items-center gap-2">
-                <Download className="h-4 w-4 text-indigo-600" />
+              <h3 className="font-semibold text-gray-800 dark:text-gray-200 flex items-center gap-2">
+                <Download className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
                 Respaldos del Sistema
               </h3>
-              
+
               {/* Respaldo Completo */}
-              <div className="bg-gradient-to-r from-indigo-50 to-blue-50 p-4 rounded-lg border border-indigo-200">
+              <div className="bg-gradient-to-r from-indigo-50 to-blue-50 dark:from-indigo-950/30 dark:to-blue-950/30 p-4 rounded-lg border border-indigo-200 dark:border-indigo-700">
                 <div className="flex items-center gap-2 mb-3">
-                  <Database className="h-4 w-4 text-indigo-600" />
-                  <span className="text-sm font-semibold text-indigo-900">Sistema Completo</span>
+                  <Database className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
+                  <span className="text-sm font-semibold text-indigo-900 dark:text-indigo-300">Sistema Completo</span>
                 </div>
                 <div className="grid grid-cols-1 gap-2">
                   <Button 
@@ -896,16 +896,16 @@ export default function AdminPage() {
                     </Button>
                   </div>
                 </div>
-                <p className="text-xs text-indigo-700 mt-2">
+                <p className="text-xs text-indigo-700 dark:text-indigo-300 mt-2">
                   Incluye toda la información del sistema
                 </p>
               </div>
 
               {/* Respaldo de Usuarios */}
-              <div className="bg-gradient-to-r from-emerald-50 to-green-50 p-4 rounded-lg border border-emerald-200">
+              <div className="bg-gradient-to-r from-emerald-50 to-green-50 dark:from-emerald-950/30 dark:to-green-950/30 p-4 rounded-lg border border-emerald-200 dark:border-emerald-700">
                 <div className="flex items-center gap-2 mb-3">
-                  <Users className="h-4 w-4 text-emerald-600" />
-                  <span className="text-sm font-semibold text-emerald-900">Solo Usuarios</span>
+                  <Users className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                  <span className="text-sm font-semibold text-emerald-900 dark:text-emerald-300">Solo Usuarios</span>
                 </div>
                 <div className="grid grid-cols-1 gap-2">
                   <Button 
@@ -967,7 +967,7 @@ export default function AdminPage() {
                     </Button>
                   </div>
                 </div>
-                <p className="text-xs text-emerald-700 mt-2">
+                <p className="text-xs text-emerald-700 dark:text-emerald-300 mt-2">
                   Solo información de usuarios
                 </p>
               </div>
@@ -975,60 +975,60 @@ export default function AdminPage() {
 
             {/* Herramientas Administrativas */}
             <div className="p-6 space-y-4">
-              <h3 className="font-semibold text-gray-800 flex items-center gap-2">
-                <Settings className="h-4 w-4 text-orange-600" />
+              <h3 className="font-semibold text-gray-800 dark:text-gray-200 flex items-center gap-2">
+                <Settings className="h-4 w-4 text-orange-600 dark:text-orange-400" />
                 Herramientas
               </h3>
               <div className="space-y-2">
                 <Button 
                   variant="outline" 
                   size="sm"
-                  className="w-full justify-start h-10 bg-gradient-to-r from-emerald-50 to-green-50 hover:from-emerald-100 hover:to-green-100 border-emerald-200 text-emerald-800" 
+                  className="w-full justify-start h-10 bg-gradient-to-r from-emerald-50 to-green-50 hover:from-emerald-100 hover:to-green-100 dark:from-emerald-950/30 dark:to-green-950/30 dark:hover:from-emerald-900/50 dark:hover:to-green-900/50 border-emerald-200 dark:border-emerald-700 text-emerald-800 dark:text-emerald-300" 
                   onClick={handleNotificationTest}
                 >
-                  <Bell className="mr-2 h-4 w-4 text-emerald-600" />
+                  <Bell className="mr-2 h-4 w-4 text-emerald-600 dark:text-emerald-400" />
                   <div className="text-left">
                     <div className="font-medium text-xs">Probar Notificaciones</div>
-                    <div className="text-xs text-emerald-600">Sistema de alertas</div>
+                    <div className="text-xs text-emerald-600 dark:text-emerald-400">Sistema de alertas</div>
                   </div>
                 </Button>
-                
+
                 <Button 
                   variant="outline" 
                   size="sm"
-                  className="w-full justify-start h-10 bg-gradient-to-r from-purple-50 to-indigo-50 hover:from-purple-100 hover:to-indigo-100 border-purple-200 text-purple-800" 
+                  className="w-full justify-start h-10 bg-gradient-to-r from-purple-50 to-indigo-50 hover:from-purple-100 hover:to-indigo-100 dark:from-purple-950/30 dark:to-indigo-950/30 dark:hover:from-purple-900/50 dark:hover:to-indigo-900/50 border-purple-200 dark:border-purple-700 text-purple-800 dark:text-purple-300" 
                   onClick={handleExportReports}
                 >
-                  <FileText className="mr-2 h-4 w-4 text-purple-600" />
+                  <FileText className="mr-2 h-4 w-4 text-purple-600 dark:text-purple-400" />
                   <div className="text-left">
                     <div className="font-medium text-xs">Exportar Reportes</div>
-                    <div className="text-xs text-purple-600">Descargar datos</div>
+                    <div className="text-xs text-purple-600 dark:text-purple-400">Descargar datos</div>
                   </div>
                 </Button>
-                
+
                 <Button 
                   variant="outline" 
                   size="sm"
-                  className="w-full justify-start h-10 bg-gradient-to-r from-orange-50 to-yellow-50 hover:from-orange-100 hover:to-yellow-100 border-orange-200 text-orange-800" 
+                  className="w-full justify-start h-10 bg-gradient-to-r from-orange-50 to-yellow-50 hover:from-orange-100 hover:to-yellow-100 dark:from-orange-950/30 dark:to-yellow-950/30 dark:hover:from-orange-900/50 dark:hover:to-yellow-900/50 border-orange-200 dark:border-orange-700 text-orange-800 dark:text-orange-300" 
                   onClick={handleClearLogs}
                 >
-                  <Activity className="mr-2 h-4 w-4 text-orange-600" />
+                  <Activity className="mr-2 h-4 w-4 text-orange-600 dark:text-orange-400" />
                   <div className="text-left">
                     <div className="font-medium text-xs">Limpiar Logs</div>
-                    <div className="text-xs text-orange-600">Liberar espacio</div>
+                    <div className="text-xs text-orange-600 dark:text-orange-400">Liberar espacio</div>
                   </div>
                 </Button>
-                
+
                 <Button 
                   variant="outline" 
                   size="sm"
-                  className="w-full justify-start h-10 bg-gradient-to-r from-red-50 to-red-100 hover:from-red-100 hover:to-red-200 border-red-300 text-red-800" 
+                  className="w-full justify-start h-10 bg-gradient-to-r from-red-50 to-red-100 hover:from-red-100 hover:to-red-200 dark:from-red-950/30 dark:to-red-900/30 dark:hover:from-red-900/50 dark:hover:to-red-800/50 border-red-300 dark:border-red-700 text-red-800 dark:text-red-300" 
                   onClick={() => setShowClearDatabaseModal(true)}
                 >
-                  <AlertTriangle className="mr-2 h-4 w-4 text-red-600" />
+                  <AlertTriangle className="mr-2 h-4 w-4 text-red-600 dark:text-red-400" />
                   <div className="text-left">
                     <div className="font-medium text-xs">Limpiar Base de Datos</div>
-                    <div className="text-xs text-red-600">⚠️ PELIGRO</div>
+                    <div className="text-xs text-red-600 dark:text-red-400">⚠️ PELIGRO</div>
                   </div>
                 </Button>
 
@@ -1037,14 +1037,14 @@ export default function AdminPage() {
                   size="sm"
                   onClick={handleResetUserSequence}
                   disabled={isResettingSequence}
-                  className="w-full justify-start h-10 bg-gradient-to-r from-blue-50 to-cyan-50 hover:from-blue-100 hover:to-cyan-100 border-blue-200 text-blue-800"
+                  className="w-full justify-start h-10 bg-gradient-to-r from-blue-50 to-cyan-50 hover:from-blue-100 hover:to-cyan-100 dark:from-blue-950/30 dark:to-cyan-950/30 dark:hover:from-blue-900/50 dark:hover:to-cyan-900/50 border-blue-200 dark:border-blue-700 text-blue-800 dark:text-blue-300"
                 >
-                  <RotateCcw className="mr-2 h-4 w-4 text-blue-600" />
+                  <RotateCcw className="mr-2 h-4 w-4 text-blue-600 dark:text-blue-400" />
                   <div className="text-left">
                     <div className="font-medium text-xs">
                       {isResettingSequence ? "Reiniciando..." : "Reiniciar IDs"}
                     </div>
-                    <div className="text-xs text-blue-600">Secuencia de usuarios</div>
+                    <div className="text-xs text-blue-600 dark:text-blue-400">Secuencia de usuarios</div>
                   </div>
                 </Button>
               </div>
@@ -1054,7 +1054,7 @@ export default function AdminPage() {
       </Card>
 
       {/* Recent Activity */}
-      <Card>
+      <Card className="border-0 shadow-lg bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm dark:border-slate-700">
         <CardHeader>
           <CardTitle>Actividad Reciente del Sistema</CardTitle>
         </CardHeader>

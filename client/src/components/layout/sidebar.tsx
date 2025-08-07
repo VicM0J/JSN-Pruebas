@@ -48,7 +48,7 @@ interface CustomSidebarProps {
 export function CustomSidebar({ onShowNotifications, onCreateOrder, onCreateReposition }: CustomSidebarProps) {
   const { user, logoutMutation } = useAuth();
   const [location, setLocation] = useLocation();
-  const { state } = useSidebar();
+  const { state, setOpen } = useSidebar();
 
   const { data: pendingTransfers = [] } = useQuery<any[]>({
     queryKey: ["/api/transfers/pending"],
@@ -162,7 +162,7 @@ export function CustomSidebar({ onShowNotifications, onCreateOrder, onCreateRepo
               JASANA
             </h1>
             <p className="text-xs text-muted-foreground">Sistema de Pedidos</p>
-            <p className="text-xs text-muted-foreground">V3.0.9 Ag25</p>
+            <p className="text-xs text-muted-foreground">V3.0.10 Ag25</p>
           </div>
           <SidebarTrigger className="ml-auto h-6 w-6 group-data-[collapsible=icon]:ml-0" />
         </div>
@@ -175,13 +175,19 @@ export function CustomSidebar({ onShowNotifications, onCreateOrder, onCreateRepo
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              <SidebarMenuItem onClick={(e) => {if (state === "collapsed") {e.preventDefault();e.stopPropagation();}}}>
+              <SidebarMenuItem>
                 <SidebarMenuButton 
                     onClick={(e) => {
                       e.preventDefault();
                       e.stopPropagation();
+                      const wasCollapsed = state === 'collapsed';
                       setLocation('/dashboard');
+                      // Mantener estado de colapso
+                      if (wasCollapsed) {
+                        setTimeout(() => setOpen(false), 1);
+                      }
                     }}
+                  asChild
                   isActive={location === '/dashboard'}
                   className={`h-10 transition-all duration-200 hover:bg-gradient-to-r hover:from-[#8c69a5]/10 hover:to-[#504b78]/10 hover:scale-[1.02] hover:shadow-sm ${
                     location === '/dashboard' 
@@ -189,19 +195,26 @@ export function CustomSidebar({ onShowNotifications, onCreateOrder, onCreateRepo
                       : ''
                   }`}
                 >
-                  <Home className="h-4 w-4 transition-transform duration-200 group-hover:scale-110" />
-                  <span className="transition-colors duration-200 group-data-[collapsible=icon]:hidden">Tablero</span>
+                  <div className="flex items-center gap-2 w-full h-full px-3">
+                    <Home className="h-4 w-4 transition-transform duration-200 group-hover:scale-110" />
+                    <span className="transition-colors duration-200 group-data-[collapsible=icon]:hidden">Tablero</span>
+                  </div>
                 </SidebarMenuButton>
               </SidebarMenuItem>
 
-              <SidebarMenuItem onClick={(e) => {if (state === "collapsed") {e.preventDefault();e.stopPropagation();}}}>
+              <SidebarMenuItem>
                 <SidebarMenuButton 
                   onClick={(e) => {
                     e.preventDefault();
                     e.stopPropagation();
+                    const wasCollapsed = state === 'collapsed';
                     setLocation('/orders');
+                    // Mantener estado de colapso
+                    if (wasCollapsed) {
+                      setTimeout(() => setOpen(false), 1);
+                    }
                   }}
-
+                  asChild
                   isActive={location === '/orders'}
                   className={`h-10 transition-all duration-200 hover:bg-gradient-to-r hover:from-[#8c69a5]/10 hover:to-[#504b78]/10 hover:scale-[1.02] hover:shadow-sm ${
                     location === '/orders' 
@@ -209,18 +222,26 @@ export function CustomSidebar({ onShowNotifications, onCreateOrder, onCreateRepo
                       : ''
                   }`}
                 >
-                  <Package className="h-4 w-4 transition-transform duration-200 group-hover:scale-110" />
-                  <span className="transition-colors duration-200 group-data-[collapsible=icon]:hidden">Pedidos</span>
+                  <div className="flex items-center gap-2 w-full h-full px-3">
+                    <Package className="h-4 w-4 transition-transform duration-200 group-hover:scale-110" />
+                    <span className="transition-colors duration-200 group-data-[collapsible=icon]:hidden">Pedidos</span>
+                  </div>
                 </SidebarMenuButton>
               </SidebarMenuItem>
 
-              <SidebarMenuItem onClick={(e) => {if (state === "collapsed") {e.preventDefault();e.stopPropagation();}}}>
+              <SidebarMenuItem>
                 <SidebarMenuButton 
                   onClick={(e) => {
                     e.preventDefault();
                     e.stopPropagation();
+                    const wasCollapsed = state === 'collapsed';
                     setLocation('/repositions');
+                    // Mantener estado de colapso
+                    if (wasCollapsed) {
+                      setTimeout(() => setOpen(false), 1);
+                    }
                   }}
+                  asChild
                   isActive={location === '/repositions'}
                   className={`h-10 transition-all duration-200 hover:bg-gradient-to-r hover:from-[#8c69a5]/10 hover:to-[#504b78]/10 hover:scale-[1.02] hover:shadow-sm group ${
                     location === '/repositions' 
@@ -228,32 +249,40 @@ export function CustomSidebar({ onShowNotifications, onCreateOrder, onCreateRepo
                       : ''
                   }`}
                 >
-                  <FileEdit className="h-4 w-4 transition-transform duration-200 group-hover:scale-110" />
-                  <span className="transition-colors duration-200 group-data-[collapsible=icon]:hidden">Reposiciones</span>
-                  {(repositionNotifications.length > 0 || pendingRepositions.length > 0) && (
-                    <div className="flex gap-1 group-data-[collapsible=icon]:hidden">
-                      {repositionNotifications.length > 0 && (
-                        <SidebarMenuBadge className="bg-destructive text-destructive-foreground transition-transform duration-200 group-hover:scale-110">
-                          {repositionNotifications.length}
-                        </SidebarMenuBadge>
-                      )}
-                      {pendingRepositions.length > 0 && (user?.area === 'admin' || user?.area === 'envios' || user?.area === 'operaciones') && (
-                        <SidebarMenuBadge className="bg-orange-500 text-white transition-transform duration-200 group-hover:scale-110">
-                          {pendingRepositions.length}
-                        </SidebarMenuBadge>
-                      )}
-                    </div>
-                  )}
+                  <div className="flex items-center gap-2 w-full h-full px-3">
+                    <FileEdit className="h-4 w-4 transition-transform duration-200 group-hover:scale-110" />
+                    <span className="transition-colors duration-200 group-data-[collapsible=icon]:hidden">Reposiciones</span>
+                    {(repositionNotifications.length > 0 || pendingRepositions.length > 0) && (
+                      <div className="flex gap-1 group-data-[collapsible=icon]:hidden">
+                        {repositionNotifications.length > 0 && (
+                          <SidebarMenuBadge className="bg-destructive text-destructive-foreground transition-transform duration-200 group-hover:scale-110">
+                            {repositionNotifications.length}
+                          </SidebarMenuBadge>
+                        )}
+                        {pendingRepositions.length > 0 && (user?.area === 'admin' || user?.area === 'envios' || user?.area === 'operaciones') && (
+                          <SidebarMenuBadge className="bg-orange-500 text-white transition-transform duration-200 group-hover:scale-110">
+                            {pendingRepositions.length}
+                          </SidebarMenuBadge>
+                        )}
+                      </div>
+                    )}
+                  </div>
                 </SidebarMenuButton>
               </SidebarMenuItem>
 
-              <SidebarMenuItem onClick={(e) => {if (state === "collapsed") {e.preventDefault();e.stopPropagation();}}}>
+              <SidebarMenuItem>
                 <SidebarMenuButton 
                   onClick={(e) => {
                     e.preventDefault();
                     e.stopPropagation();
+                    const wasCollapsed = state === 'collapsed';
                     setLocation('/history');
+                    // Mantener estado de colapso
+                    if (wasCollapsed) {
+                      setTimeout(() => setOpen(false), 1);
+                    }
                   }}
+                  asChild
                   isActive={location === '/history'}
                   className={`h-10 transition-all duration-200 hover:bg-gradient-to-r hover:from-[#8c69a5]/10 hover:to-[#504b78]/10 hover:scale-[1.02] hover:shadow-sm ${
                     location === '/history' 
@@ -261,18 +290,26 @@ export function CustomSidebar({ onShowNotifications, onCreateOrder, onCreateRepo
                       : ''
                   }`}
                 >
-                  <History className="h-4 w-4 transition-transform duration-200 group-hover:scale-110" />
-                  <span className="transition-colors duration-200 group-data-[collapsible=icon]:hidden">Historial</span>
+                  <div className="flex items-center gap-2 w-full h-full px-3">
+                    <History className="h-4 w-4 transition-transform duration-200 group-hover:scale-110" />
+                    <span className="transition-colors duration-200 group-data-[collapsible=icon]:hidden">Historial</span>
+                  </div>
                 </SidebarMenuButton>
               </SidebarMenuItem>
 
-              <SidebarMenuItem onClick={(e) => {if (state === "collapsed") {e.preventDefault();e.stopPropagation();}}}>
+              <SidebarMenuItem>
                 <SidebarMenuButton 
                   onClick={(e) => {
                     e.preventDefault();
                     e.stopPropagation();
+                    const wasCollapsed = state === 'collapsed';
                     setLocation('/agenda');
+                    // Mantener estado de colapso
+                    if (wasCollapsed) {
+                      setTimeout(() => setOpen(false), 1);
+                    }
                   }}
+                  asChild
                   isActive={location === '/agenda'}
                   className={`h-10 transition-all duration-200 hover:bg-gradient-to-r hover:from-[#8c69a5]/10 hover:to-[#504b78]/10 hover:scale-[1.02] hover:shadow-sm ${
                     location === '/agenda' 
@@ -280,18 +317,24 @@ export function CustomSidebar({ onShowNotifications, onCreateOrder, onCreateRepo
                       : ''
                   }`}
                 >
-                  <Calendar className="h-4 w-4 transition-transform duration-200 group-hover:scale-110" />
-                  <span className="transition-colors duration-200 group-data-[collapsible=icon]:hidden">Agenda</span>
+                  <div className="flex items-center gap-2 w-full h-full px-3">
+                    <Calendar className="h-4 w-4 transition-transform duration-200 group-hover:scale-110" />
+                    <span className="transition-colors duration-200 group-data-[collapsible=icon]:hidden">Agenda</span>
+                  </div>
                 </SidebarMenuButton>
               </SidebarMenuItem>
 
               {user?.area === 'almacen' && (
-                <SidebarMenuItem onClick={(e) => {if (state === "collapsed") {e.preventDefault();e.stopPropagation();}}}>
+                <SidebarMenuItem>
                   <SidebarMenuButton 
                     onClick={(e) => {
                       e.preventDefault();
                       e.stopPropagation();
                       setLocation('/almacen');
+                      // Si está colapsado, mantenerlo colapsado
+                      if (state === 'collapsed') {
+                        setTimeout(() => setOpen(false), 0);
+                      }
                     }}
                     isActive={location === '/almacen'}
                     className={`h-10 transition-all duration-200 hover:bg-gradient-to-r hover:from-[#8c69a5]/10 hover:to-[#504b78]/10 hover:scale-[1.02] hover:shadow-sm ${
@@ -319,7 +362,7 @@ export function CustomSidebar({ onShowNotifications, onCreateOrder, onCreateRepo
               <SidebarGroupContent>
                 <SidebarMenu>
                   {canCreateOrders && (
-                    <SidebarMenuItem onClick={(e) => {if (state === "collapsed") {e.preventDefault();e.stopPropagation();}}}>
+                    <SidebarMenuItem>
                       <SidebarMenuButton 
                         onClick={(e) => {
                           e.stopPropagation();
@@ -334,7 +377,7 @@ export function CustomSidebar({ onShowNotifications, onCreateOrder, onCreateRepo
                   )}
 
                   {canCreateRepositions && (
-                    <SidebarMenuItem onClick={(e) => {if (state === "collapsed") {e.preventDefault();e.stopPropagation();}}}>
+                    <SidebarMenuItem>
                       <SidebarMenuButton 
                         onClick={(e) => {
                           e.preventDefault();
@@ -363,12 +406,16 @@ export function CustomSidebar({ onShowNotifications, onCreateOrder, onCreateRepo
               </SidebarGroupLabel>
               <SidebarGroupContent>
                 <SidebarMenu>
-                  <SidebarMenuItem onClick={(e) => {if (state === "collapsed") {e.preventDefault();e.stopPropagation();}}}>
+                  <SidebarMenuItem>
                     <SidebarMenuButton 
                       onClick={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
                         setLocation('/admin');
+                        // Si está colapsado, mantenerlo colapsado
+                        if (state === 'collapsed') {
+                          setTimeout(() => setOpen(false), 0);
+                        }
                       }}
                       isActive={location === '/admin'}
                       className={`h-10 transition-all duration-200 hover:bg-gradient-to-r hover:from-[#8c69a5]/10 hover:to-[#504b78]/10 hover:scale-[1.02] hover:shadow-sm group ${
@@ -382,12 +429,16 @@ export function CustomSidebar({ onShowNotifications, onCreateOrder, onCreateRepo
                     </SidebarMenuButton>
                   </SidebarMenuItem>
 
-                  <SidebarMenuItem onClick={(e) => {if (state === "collapsed") {e.preventDefault();e.stopPropagation();}}}>
+                  <SidebarMenuItem>
                     <SidebarMenuButton 
                       onClick={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
                         setLocation('/metrics');
+                        // Si está colapsado, mantenerlo colapsado
+                        if (state === 'collapsed') {
+                          setTimeout(() => setOpen(false), 0);
+                        }
                       }}
                       isActive={location === '/metrics'}
                       className={`h-10 transition-all duration-200 hover:bg-gradient-to-r hover:from-[#8c69a5]/10 hover:to-[#504b78]/10 hover:scale-[1.02] hover:shadow-sm ${

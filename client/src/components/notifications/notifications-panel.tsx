@@ -304,11 +304,11 @@ export function NotificationsPanel({ open, onClose }: NotificationsPanelProps) {
                   Limpiar todo
                 </Button>
               )}
-              {totalNotifications > 0 && (
+              {/* {totalNotifications > 0 && (
                 <Badge className="bg-destructive text-destructive-foreground border-0 shadow-sm">
                   {totalNotifications}
                 </Badge>
-              )}
+              )} */}
             </div>
           </SheetTitle>
 
@@ -316,7 +316,7 @@ export function NotificationsPanel({ open, onClose }: NotificationsPanelProps) {
         </SheetHeader>
 
         <div className="flex-1 overflow-y-auto py-6 space-y-4 max-h-[calc(100vh-12rem)] scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 dark:scrollbar-thumb-gray-600 dark:scrollbar-track-gray-800">
-          <NotificationPermission />
+          {/* <NotificationPermission /> */}
           {repositionNotifications.length > 0 && (
             <div className="space-y-3">
               <div className="flex items-center gap-2">
@@ -455,9 +455,9 @@ export function NotificationsPanel({ open, onClose }: NotificationsPanelProps) {
                   <div className="flex-1">
                     <h4 className="font-semibold text-foreground text-sm">Bienvenido a JASANA</h4>
                     <p className="text-sm text-muted-foreground mt-1">
-                      Sistema de gestión listo para usar
+                      Aquí verás notificaciones importantes del sistema
                     </p>
-                    <p className="text-xs text-muted-foreground mt-2">Ahora</p>
+
                   </div>
                 </div>
               </div>

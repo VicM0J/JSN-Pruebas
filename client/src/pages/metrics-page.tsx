@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Layout } from "@/components/layout/layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -108,25 +107,25 @@ export default function MetricsPage() {
 
   return (
     <Layout>
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-6">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 dark:from-slate-900 dark:to-blue-900 p-6">
         <div className="max-w-7xl mx-auto space-y-8">
           {/* Header Mejorado */}
-          <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 p-8 text-white shadow-2xl">
-            <div className="absolute inset-0 bg-black/20"></div>
+          <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 dark:from-blue-800 dark:via-purple-800 dark:to-indigo-800 p-8 text-white shadow-2xl">
+            <div className="absolute inset-0 bg-black/20 dark:bg-black/40"></div>
             <div className="relative z-10">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-6">
-                  <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center backdrop-blur-sm">
+                  <div className="w-16 h-16 bg-white/20 dark:bg-white/30 rounded-2xl flex items-center justify-center backdrop-blur-sm">
                     <BarChart3 className="text-white text-3xl" />
                   </div>
                   <div>
-                    <h1 className="text-4xl font-bold mb-2">Centro de Métricas</h1>
-                    <p className="text-blue-100 text-lg">Análisis inteligente y estadísticas avanzadas</p>
+                    <h1 className="text-4xl font-bold mb-2 text-white">Centro de Métricas</h1>
+                    <p className="text-blue-100 dark:text-blue-200 text-lg">Análisis inteligente y estadísticas avanzadas</p>
                   </div>
                 </div>
                 <div className="hidden md:flex items-center space-x-4">
                   <div className="text-right">
-                    <div className="text-sm text-blue-100">Última actualización</div>
+                    <div className="text-sm text-blue-100 dark:text-blue-200">Última actualización</div>
                     <div className="text-white font-semibold">{new Date().toLocaleDateString('es-ES')}</div>
                   </div>
                 </div>
@@ -135,15 +134,15 @@ export default function MetricsPage() {
           </div>
 
           {/* Filtros Mejorados */}
-          <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm">
+          <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm dark:bg-slate-800/50 dark:border-slate-700">
             <CardContent className="p-6">
               <div className="flex flex-wrap gap-4 items-center">
                 <div className="flex items-center space-x-2">
                   <Calendar className="h-5 w-5 text-blue-600" />
-                  <span className="font-medium text-gray-700">Período:</span>
+                  <span className="font-medium text-gray-700 dark:text-gray-300">Período:</span>
                 </div>
                 <Select value={selectedMonth} onValueChange={setSelectedMonth}>
-                  <SelectTrigger className="w-48 border-2 border-blue-200 focus:border-blue-500 rounded-lg">
+                  <SelectTrigger className="w-48 border-2 border-blue-200 dark:border-slate-600 focus:border-blue-500 rounded-lg dark:bg-slate-800">
                     <SelectValue placeholder="Seleccionar mes" />
                   </SelectTrigger>
                   <SelectContent>
@@ -156,7 +155,7 @@ export default function MetricsPage() {
                 </Select>
 
                 <Select value={selectedYear} onValueChange={setSelectedYear}>
-                  <SelectTrigger className="w-32 border-2 border-blue-200 focus:border-blue-500 rounded-lg">
+                  <SelectTrigger className="w-32 border-2 border-blue-200 dark:border-slate-600 focus:border-blue-500 rounded-lg dark:bg-slate-800">
                     <SelectValue placeholder="Año" />
                   </SelectTrigger>
                   <SelectContent>
@@ -180,7 +179,7 @@ export default function MetricsPage() {
               Array.from({ length: 4 }).map((_, i) => (
                 <Card key={i} className="animate-pulse border-0 shadow-lg">
                   <CardContent className="p-6">
-                    <div className="h-20 bg-gray-200 rounded-lg"></div>
+                    <div className="h-20 bg-gray-200 dark:bg-slate-700 rounded-lg"></div>
                   </CardContent>
                 </Card>
               ))
@@ -223,14 +222,14 @@ export default function MetricsPage() {
                   iconColor: "text-orange-600"
                 }
               ].map((metric, index) => (
-                <Card key={index} className="border-0 shadow-lg hover:shadow-xl transition-all duration-300 group">
+                <Card key={index} className="border-0 shadow-lg hover:shadow-xl transition-all duration-300 group bg-white dark:bg-slate-800 dark:border-slate-700">
                   <CardContent className="p-6">
                     <div className="flex items-center justify-between">
                       <div className="space-y-2">
-                        <p className="text-sm font-semibold text-gray-600 uppercase tracking-wide">{metric.title}</p>
-                        <p className="text-3xl font-bold text-gray-900">{metric.value}</p>
+                        <p className="text-sm font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wide">{metric.title}</p>
+                        <p className="text-3xl font-bold text-gray-900 dark:text-white">{metric.value}</p>
                       </div>
-                      <div className={`w-14 h-14 ${metric.bgColor} rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300`}>
+                      <div className={`w-14 h-14 ${metric.bgColor} dark:bg-opacity-20 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300`}>
                         <metric.icon className={`${metric.iconColor} text-2xl`} size={28} />
                       </div>
                     </div>
@@ -241,16 +240,16 @@ export default function MetricsPage() {
           </div>
 
           {/* Métricas Mensuales */}
-          <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm">
+          <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm dark:bg-slate-800/50 dark:border-slate-700">
             <CardHeader className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-t-lg">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-3">
                   <Activity className="h-6 w-6" />
                   <CardTitle className="text-2xl">Análisis de {currentMonthName}</CardTitle>
                 </div>
-                <Button 
-                  onClick={() => handleExport('monthly')} 
-                  variant="secondary" 
+                <Button
+                  onClick={() => handleExport('monthly')}
+                  variant="secondary"
                   size="sm"
                   className="bg-white/20 hover:bg-white/30 text-white border-white/30"
                 >
@@ -272,23 +271,23 @@ export default function MetricsPage() {
               ) : monthlyMetrics ? (
                 <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
                   {/* Gráfico de barras mejorado */}
-                  <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl p-6">
-                    <h3 className="text-xl font-bold text-gray-800 mb-6 flex items-center">
+                  <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20 rounded-2xl p-6">
+                    <h3 className="text-xl font-bold text-gray-800 dark:text-gray-200 mb-6 flex items-center">
                       <BarChart3 className="h-5 w-5 mr-2 text-blue-600" />
                       Reposiciones por Área
                     </h3>
                     <ResponsiveContainer width="100%" height={350}>
                       <BarChart data={monthlyMetrics.byArea}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                        <XAxis dataKey="area" tick={{ fontSize: 12 }} />
-                        <YAxis tick={{ fontSize: 12 }} />
-                        <Tooltip 
-                          contentStyle={{ 
-                            backgroundColor: '#1e293b', 
-                            border: 'none', 
+                        <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0 dark:border-slate-700" />
+                        <XAxis dataKey="area" tick={{ fontSize: 12, fill: 'var(--color-text-gray-700)' }} />
+                        <YAxis tick={{ fontSize: 12, fill: 'var(--color-text-gray-700)' }} />
+                        <Tooltip
+                          contentStyle={{
+                            backgroundColor: '#1e293b',
+                            border: 'none',
                             borderRadius: '8px',
                             color: 'white'
-                          }} 
+                          }}
                         />
                         <Bar dataKey="count" fill="url(#colorGradient)" radius={[4, 4, 0, 0]} />
                         <defs>
@@ -302,8 +301,8 @@ export default function MetricsPage() {
                   </div>
 
                   {/* Gráfico de pastel mejorado */}
-                  <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-2xl p-6">
-                    <h3 className="text-xl font-bold text-gray-800 mb-6">Distribución Porcentual</h3>
+                  <div className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950/20 dark:to-emerald-950/20 rounded-2xl p-6">
+                    <h3 className="text-xl font-bold text-gray-800 dark:text-gray-200 mb-6">Distribución Porcentual</h3>
                     <ResponsiveContainer width="100%" height={350}>
                       <PieChart>
                         <Pie
@@ -320,13 +319,13 @@ export default function MetricsPage() {
                             <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                           ))}
                         </Pie>
-                        <Tooltip 
-                          contentStyle={{ 
-                            backgroundColor: '#1e293b', 
-                            border: 'none', 
+                        <Tooltip
+                          contentStyle={{
+                            backgroundColor: '#1e293b',
+                            border: 'none',
                             borderRadius: '8px',
                             color: 'white'
-                          }} 
+                          }}
                         />
                       </PieChart>
                     </ResponsiveContainer>
@@ -334,21 +333,21 @@ export default function MetricsPage() {
 
                   {/* Tarjetas de estadísticas mejoradas */}
                   <div className="xl:col-span-2">
-                    <h3 className="text-xl font-bold text-gray-800 mb-6">Estadísticas Detalladas</h3>
+                    <h3 className="text-xl font-bold text-gray-800 dark:text-gray-200 mb-6">Estadísticas Detalladas</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                       {monthlyMetrics.byArea.map((area: any, index: number) => (
-                        <Card key={area.area} className="border-0 shadow-md hover:shadow-lg transition-all duration-300 group">
+                        <Card key={area.area} className="border-0 shadow-md hover:shadow-lg transition-all duration-300 bg-white dark:bg-slate-800 dark:border-slate-700">
                           <CardContent className="p-6">
                             <div className="flex items-center justify-between">
                               <div className="space-y-2">
-                                <p className="font-bold text-gray-800 text-lg">{area.area}</p>
+                                <p className="font-bold text-gray-800 dark:text-gray-100 text-lg">{area.area}</p>
                                 <div className="space-y-1">
-                                  <p className="text-sm text-gray-600">{area.count} reposiciones</p>
+                                  <p className="text-sm text-gray-600 dark:text-gray-300">{area.count} reposiciones</p>
                                 </div>
                               </div>
                               <div className="text-right">
-                                <Badge 
-                                  style={{ 
+                                <Badge
+                                  style={{
                                     backgroundColor: COLORS[index % COLORS.length],
                                     fontSize: '16px',
                                     padding: '8px 12px'
@@ -376,7 +375,7 @@ export default function MetricsPage() {
 
           {/* Causas de Daño */}
           {monthlyMetrics?.byCause && (
-            <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm">
+            <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm dark:bg-slate-800/50 dark:border-slate-700">
               <CardHeader className="bg-gradient-to-r from-red-500 to-pink-600 text-white rounded-t-lg">
                 <CardTitle className="text-2xl flex items-center">
                   <AlertTriangle className="h-6 w-6 mr-3" />
@@ -385,20 +384,20 @@ export default function MetricsPage() {
               </CardHeader>
               <CardContent className="p-8">
                 <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
-                  <div className="bg-gradient-to-br from-red-50 to-pink-50 rounded-2xl p-6">
-                    <h3 className="text-xl font-bold text-gray-800 mb-6">Distribución de Causas</h3>
+                  <div className="bg-gradient-to-br from-red-50 to-pink-50 dark:from-red-950/20 dark:to-pink-950/20 rounded-2xl p-6">
+                    <h3 className="text-xl font-bold text-gray-800 dark:text-gray-200 mb-6">Distribución de Causas</h3>
                     <ResponsiveContainer width="100%" height={350}>
                       <BarChart data={monthlyMetrics.byCause}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                        <XAxis dataKey="cause" angle={-45} textAnchor="end" height={100} tick={{ fontSize: 11 }} />
-                        <YAxis tick={{ fontSize: 12 }} />
-                        <Tooltip 
-                          contentStyle={{ 
-                            backgroundColor: '#1e293b', 
-                            border: 'none', 
+                        <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0 dark:border-slate-700" />
+                        <XAxis dataKey="cause" angle={-45} textAnchor="end" height={100} tick={{ fontSize: 11, fill: 'var(--color-text-gray-700)' }} />
+                        <YAxis tick={{ fontSize: 12, fill: 'var(--color-text-gray-700)' }} />
+                        <Tooltip
+                          contentStyle={{
+                            backgroundColor: '#1e293b',
+                            border: 'none',
                             borderRadius: '8px',
                             color: 'white'
-                          }} 
+                          }}
                         />
                         <Bar dataKey="count" fill="#EF4444" radius={[4, 4, 0, 0]} />
                       </BarChart>
@@ -406,18 +405,18 @@ export default function MetricsPage() {
                   </div>
 
                   <div className="space-y-4">
-                    <h3 className="text-xl font-bold text-gray-800">Ranking de Causas</h3>
+                    <h3 className="text-xl font-bold text-gray-800 dark:text-gray-200">Ranking de Causas</h3>
                     <div className="space-y-3">
                       {monthlyMetrics.byCause.map((cause: any, index: number) => (
-                        <div key={cause.cause} className="flex items-center justify-between p-4 bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl hover:shadow-md transition-all duration-300">
+                        <div key={cause.cause} className="flex items-center justify-between p-4 bg-gradient-to-r from-gray-50 to-gray-100 dark:from-slate-800 dark:to-slate-700 rounded-xl hover:shadow-md transition-all duration-300">
                           <div className="flex items-center space-x-3">
                             <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm`} style={{ backgroundColor: COLORS[index % COLORS.length] }}>
                               {index + 1}
                             </div>
-                            <span className="font-medium text-gray-800">{cause.cause}</span>
+                            <span className="font-medium text-gray-800 dark:text-gray-200">{cause.cause}</span>
                           </div>
                           <div className="flex items-center space-x-3">
-                            <span className="text-lg font-bold text-gray-800">{cause.count}</span>
+                            <span className="text-lg font-bold text-gray-800 dark:text-gray-100">{cause.count}</span>
                             <Badge variant="outline" className="text-sm font-semibold">
                               {cause.percentage}%
                             </Badge>
@@ -432,16 +431,16 @@ export default function MetricsPage() {
           )}
 
           {/* Análisis por Número de Solicitud */}
-          <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm">
+          <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm dark:bg-slate-800/50 dark:border-slate-700">
             <CardHeader className="bg-gradient-to-r from-amber-500 to-orange-600 text-white rounded-t-lg">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-2xl flex items-center">
                   <FileText className="h-6 w-6 mr-3" />
                   Análisis por Número de Solicitud
                 </CardTitle>
-                <Button 
-                  onClick={() => handleExport('requests')} 
-                  variant="secondary" 
+                <Button
+                  onClick={() => handleExport('requests')}
+                  variant="secondary"
                   size="sm"
                   className="bg-white/20 hover:bg-white/30 text-white border-white/30"
                 >
@@ -483,21 +482,21 @@ export default function MetricsPage() {
                         color: "red"
                       }
                     ].map((stat, index) => (
-                      <Card key={index} className="border-0 shadow-md hover:shadow-lg transition-all duration-300">
+                      <Card key={index} className="border-0 shadow-md hover:shadow-lg transition-all duration-300 bg-white dark:bg-slate-800 dark:border-slate-700">
                         <CardContent className="p-6">
                           <div className="text-center space-y-4">
                             <div className={`w-16 h-16 mx-auto rounded-full flex items-center justify-center ${
-                              stat.color === 'blue' ? 'bg-blue-100' : 
-                              stat.color === 'green' ? 'bg-green-100' : 'bg-red-100'
+                              stat.color === 'blue' ? 'bg-blue-100 dark:bg-blue-900' :
+                              stat.color === 'green' ? 'bg-green-100 dark:bg-green-900' : 'bg-red-100 dark:bg-red-900'
                             }`}>
                               <stat.icon className={`h-8 w-8 ${
-                                stat.color === 'blue' ? 'text-blue-600' : 
+                                stat.color === 'blue' ? 'text-blue-600' :
                                 stat.color === 'green' ? 'text-green-600' : 'text-red-600'
                               }`} />
                             </div>
                             <div>
-                              <p className="text-sm font-semibold text-gray-600 uppercase tracking-wide">{stat.title}</p>
-                              <p className="text-3xl font-bold text-gray-900 mt-2">{stat.value}</p>
+                              <p className="text-sm font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wide">{stat.title}</p>
+                              <p className="text-3xl font-bold text-gray-900 dark:text-white mt-2">{stat.value}</p>
                             </div>
                           </div>
                         </CardContent>
@@ -505,25 +504,25 @@ export default function MetricsPage() {
                     ))}
                   </div>
 
-                  <div className="bg-gradient-to-br from-amber-50 to-orange-50 rounded-2xl p-6">
-                    <h3 className="text-xl font-bold text-gray-800 mb-6">Top 10 Solicitudes con Más Reposiciones</h3>
+                  <div className="bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950/20 dark:to-orange-950/20 rounded-2xl p-6">
+                    <h3 className="text-xl font-bold text-gray-800 dark:text-gray-200 mb-6">Top 10 Solicitudes con Más Reposiciones</h3>
                     <div className="overflow-x-auto">
                       <table className="w-full">
                         <thead>
-                          <tr className="border-b-2 border-orange-200">
-                            <th className="text-left py-4 px-6 font-bold text-gray-700">No. Solicitud</th>
-                            <th className="text-left py-4 px-6 font-bold text-gray-700">Reposiciones</th>
-                            <th className="text-left py-4 px-6 font-bold text-gray-700">Reprocesos</th>
-                            <th className="text-left py-4 px-6 font-bold text-gray-700">Total</th>
+                          <tr className="border-b-2 border-orange-200 dark:border-orange-700">
+                            <th className="text-left py-4 px-6 font-bold text-gray-700 dark:text-gray-300">No. Solicitud</th>
+                            <th className="text-left py-4 px-6 font-bold text-gray-700 dark:text-gray-300">Reposiciones</th>
+                            <th className="text-left py-4 px-6 font-bold text-gray-700 dark:text-gray-300">Reprocesos</th>
+                            <th className="text-left py-4 px-6 font-bold text-gray-700 dark:text-gray-300">Total</th>
                           </tr>
                         </thead>
                         <tbody>
                           {requestAnalysis.topRequests.map((request: any, index: number) => (
-                            <tr key={request.noSolicitud} className="border-b border-orange-100 hover:bg-orange-50 transition-colors duration-200">
-                              <td className="py-4 px-6 font-medium text-gray-800">{request.noSolicitud}</td>
-                              <td className="py-4 px-6 text-gray-700">{request.reposiciones}</td>
-                              <td className="py-4 px-6 text-gray-700">{request.reprocesos}</td>
-                              <td className="py-4 px-6 font-bold text-gray-900">{request.total}</td>
+                            <tr key={request.noSolicitud} className="border-b border-orange-100 dark:border-orange-800 hover:bg-orange-50 dark:hover:bg-orange-950/30 transition-colors duration-200">
+                              <td className="py-4 px-6 font-medium text-gray-800 dark:text-gray-200">{request.noSolicitud}</td>
+                              <td className="py-4 px-6 text-gray-700 dark:text-gray-300">{request.reposiciones}</td>
+                              <td className="py-4 px-6 text-gray-700 dark:text-gray-300">{request.reprocesos}</td>
+                              <td className="py-4 px-6 font-bold text-gray-900 dark:text-gray-100">{request.total}</td>
                             </tr>
                           ))}
                         </tbody>

@@ -189,10 +189,6 @@ export default function AuthPage() {
               <h1 className="text-5xl font-black bg-gradient-to-r from-violet-600 via-purple-600 to-fuchsia-600 dark:from-violet-400 dark:via-purple-400 dark:to-fuchsia-400 bg-clip-text text-transparent mb-4 tracking-tight">
                 Bienvenido a JASANA
               </h1>
-              <p className="text-2xl font-medium text-slate-600 dark:text-slate-300 mb-8">
-                Sistema de Gestión de Pedidos
-                <span className="inline-block ml-2 animate-pulse">✨</span>
-              </p>
             </div>
 
             <div className="space-y-8">

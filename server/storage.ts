@@ -773,6 +773,8 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getRepositions(area?: Area, userArea?: Area | 'admin' | 'envios' | 'diseño'): Promise<Reposition[]> {
+    console.log(`Getting repositions for area: ${area}, userArea: ${userArea}`);
+    
     let query = db.select().from(repositions);
 
     if (userArea === 'diseño') {
@@ -783,6 +785,7 @@ export class DatabaseStorage implements IStorage {
           ne(repositions.status, 'eliminado' as RepositionStatus)
         )
       );
+      console.log('Applied diseño filter: aprobado status only');
     } else if (userArea !== 'admin' && userArea !== 'envios') {
         // Otras áreas no pueden ver reposiciones eliminadas, completadas ni canceladas
         query = (query as any).where(
@@ -792,9 +795,23 @@ export class DatabaseStorage implements IStorage {
             ne(repositions.status, 'cancelado' as RepositionStatus)
           )
         );
+        console.log('Applied non-admin filter: excluding eliminated, completed, and cancelled');
+    } else {
+      console.log('No status filters applied (admin/envios area)');
     }
 
-    return await (query as any).orderBy(desc(repositions.createdAt));
+    const results = await (query as any).orderBy(desc(repositions.createdAt));
+    console.log(`Found ${results.length} repositions for user area ${userArea}`);
+    
+    if (results.length > 0) {
+      console.log('Sample results:', results.slice(0, 3).map((r: any) => ({
+        folio: r.folio,
+        status: r.status,
+        type: r.type
+      })));
+    }
+    
+    return results;
   }
 
   async getRepositionsByArea(area: Area, userId?: number): Promise<Reposition[]> {
@@ -977,7 +994,7 @@ export class DatabaseStorage implements IStorage {
             type: 'reposition_received',
             title: 'Nueva Reposición Recibida',
             message: `La reposición ${reposition?.folio} ha llegado a tu área`,
-            repositionId: transfer.repositionId,
+            repositionId: reposition.repositionId,
           });
         }
       }
@@ -1291,7 +1308,7 @@ async getRepositionTracking(repositionId: number): Promise<any> {
     const areaOrder = ['patronaje', 'corte', 'bordado', 'ensamble', 'plancha', 'calidad'];
     const sortedAreas = allRelevantAreas.sort((a, b) => {
       const indexA = areaOrder.indexOf(a);
-      const indexB = areaArea.indexOf(b);
+      const indexB = areaOrder.indexOf(b);
       return indexA - indexB;
     });
 
@@ -2018,10 +2035,11 @@ async startRepositionTimer(repositionId: number, userId: number, area: string): 
 
   async clearEntireDatabase(deleteUsers?: boolean): Promise<void> {
     try {
+      // Eliminar en orden específico debido a las dependencias de claves foráneas
       await db.delete(documents);
-      await db.delete(repositionHistory);
       await db.delete(repositionTimers);
       await db.delete(repositionTransfers);
+      await db.delete(repositionHistory);
       await db.delete(repositionMaterials);
       await db.delete(repositionProducts);
       await db.delete(repositionPieces);
@@ -2057,7 +2075,7 @@ async startRepositionTimer(repositionId: number, userId: number, area: string): 
 
   async backupUsers(): Promise<any> {
     try {
-      const allUsers = await db.select().from(users);
+      const allUsers = await db.select().from(users).orderBy(asc(users.id));
       return {
         users: allUsers,
         timestamp: new Date().toISOString(),
@@ -3142,7 +3160,7 @@ async createReposition(data: InsertReposition & { folio: string, productos?: any
     console.log('Starting complete database clear...');
 
     try {
-      // Eliminar en orden específico debido a foreign keys
+      // Eliminar en orden específico debido a las dependencias de claves foráneas
       await db.delete(documents);
       await db.delete(repositionTimers);
       await db.delete(repositionTransfers);
@@ -3151,15 +3169,13 @@ async createReposition(data: InsertReposition & { folio: string, productos?: any
       await db.delete(repositionProducts);
       await db.delete(repositionPieces);
       await db.delete(repositions);
-
-      await db.delete(agendaEvents);
-      await db.delete(adminPasswords);
-
-      await db.delete(notifications);
-      await db.delete(transfers);
       await db.delete(orderHistory);
+      await db.delete(transfers);
       await db.delete(orderPieces);
       await db.delete(orders);
+      await db.delete(notifications);
+      await db.delete(agendaEvents);
+      await db.delete(adminPasswords);
 
       // Solo eliminar usuarios si está marcada la opción
       if (deleteUsers) {
@@ -3404,434 +3420,450 @@ async createReposition(data: InsertReposition & { folio: string, productos?: any
   }
 
    async backupCompleteSystem(): Promise<any> {
-    try {
-      console.log('Starting complete system backup...');
+     try {
+       console.log('Starting complete system backup...');
 
-      // Obtener todos los datos de todas las tablas
-      const [
-        allUsers,
-        allOrders,
-        allOrderPieces,
-        allTransfers,
-        allOrderHistory,
-        allNotifications,
-        allRepositions,
-        allRepositionPieces,
-        allRepositionProducts,
-        allRepositionTimers,
-        allRepositionTransfers,
-        allRepositionHistory,
-        allRepositionMaterials,
-        allAdminPasswords,
-        allAgendaEvents,
-        allDocuments
-      ] = await Promise.all([
-        db.select().from(users),
-        db.select().from(orders),
-        db.select().from(orderPieces),
-        db.select().from(transfers),
-        db.select().from(orderHistory),
-        db.select().from(notifications),
-        db.select().from(repositions),
-        db.select().from(repositionPieces),
-        db.select().from(repositionProducts),
-        db.select().from(repositionTimers),
-        db.select().from(repositionTransfers),
-        db.select().from(repositionHistory),
-        db.select().from(repositionMaterials),
-        db.select().from(adminPasswords),
-        db.select().from(agendaEvents),
-        db.select().from(documents)
-      ]);
+       // Fetch all tables without error catching to see real errors
+       console.log('Fetching users...');
+       const allUsers = await db.select().from(users).orderBy(asc(users.id));
+       console.log(`Found ${allUsers.length} users`);
 
-      const backup = {
-        version: "1.0",
-        timestamp: new Date().toISOString(),
-        system: "JASANA",
-        tables: {
-          users: allUsers,
-          orders: allOrders,
-          orderPieces: allOrderPieces,
-          transfers: allTransfers,
-          orderHistory: allOrderHistory,
-          notifications: allNotifications,
-          repositions: allRepositions,
-          repositionPieces: allRepositionPieces,
-          repositionProducts: allRepositionProducts,
-          repositionTimers: allRepositionTimers,
-          repositionTransfers: allRepositionTransfers,
-          repositionHistory: allRepositionHistory,
-          repositionMaterials: allRepositionMaterials,
-          adminPasswords: allAdminPasswords,
-          agendaEvents: allAgendaEvents,
-          documents: allDocuments
-        },
-        stats: {
-          totalUsers: allUsers.length,
-          totalOrders: allOrders.length,
-          totalRepositions: allRepositions.length,
-          totalTransfers: allTransfers.length,
-          totalDocuments: allDocuments.length
-        }
-      };
+       console.log('Fetching notifications...');
+       const allNotifications = await db.select().from(notifications).orderBy(asc(notifications.id));
+       console.log(`Found ${allNotifications.length} notifications`);
 
-      console.log('Complete system backup created successfully');
-      return backup;
-    } catch (error) {
-      console.error('Backup complete system error:', error);
-      throw new Error('Error al crear respaldo completo del sistema: ' + error.message);
-    }
-  }
+       console.log('Fetching repositions...');
+       const allRepositions = await db.select().from(repositions).orderBy(asc(repositions.id));
+       console.log(`Found ${allRepositions.length} repositions (including all statuses)`);
+       console.log('Sample repositions:', allRepositions.slice(0, 3).map(r => ({ id: r.id, folio: r.folio, status: r.status })));
 
-  async restoreCompleteSystem(backupData: any): Promise<any> {
-    console.log('Starting complete system restore...');
+       console.log('Fetching reposition pieces...');
+       const allRepositionPieces = await db.select().from(repositionPieces).orderBy(asc(repositionPieces.id));
+       console.log(`Found ${allRepositionPieces.length} reposition pieces`);
 
-    try {
-      // Validar formato de respaldo
-      if (!backupData || typeof backupData !== 'object') {
-        throw new Error('Formato de respaldo inválido - no es un objeto válido');
-      }
+       console.log('Fetching reposition products...');
+       const allRepositionProducts = await db.select().from(repositionProducts).orderBy(asc(repositionProducts.id));
+       console.log(`Found ${allRepositionProducts.length} reposition products`);
 
-      console.log('Backup data keys:', Object.keys(backupData));
+       console.log('Fetching reposition timers...');
+       const allRepositionTimers = await db.select().from(repositionTimers).orderBy(asc(repositionTimers.id));
+       console.log(`Found ${allRepositionTimers.length} reposition timers`);
 
-      // Detectar el tipo de respaldo
-      const isUserBackup = backupData.users && Array.isArray(backupData.users) && !backupData.tables;
-      const isSystemBackup = backupData.tables && typeof backupData.tables === 'object';
+       console.log('Fetching reposition transfers...');
+       const allRepositionTransfers = await db.select().from(repositionTransfers).orderBy(asc(repositionTransfers.id));
+       console.log(`Found ${allRepositionTransfers.length} reposition transfers`);
 
-      if (!isUserBackup && !isSystemBackup) {
-        throw new Error(`Formato de respaldo inválido - debe ser un respaldo de usuarios o del sistema completo. Propiedades encontradas: ${Object.keys(backupData).join(', ')}`);
-      }
+       console.log('Fetching reposition history...');
+       const allRepositionHistory = await db.select().from(repositionHistory).orderBy(asc(repositionHistory.id));
+       console.log(`Found ${allRepositionHistory.length} reposition history entries`);
 
-      // Si es un respaldo de usuarios, convertirlo al formato de sistema
-      if (isUserBackup) {
-        console.log('Detectado respaldo de usuarios, convirtiendo a formato de sistema...');
-        const originalUsers = backupData.users;
-        backupData = {
-          version: backupData.version || "1.0",
-          timestamp: backupData.timestamp || new Date().toISOString(),
-          system: "JASANA",
-          tables: {
-            users: originalUsers
-          }
-        };
-        console.log('Respaldo convertido exitosamente con', originalUsers.length, 'usuarios');
-      }
+       console.log('Fetching reposition materials...');
+       const allRepositionMaterials = await db.select().from(repositionMaterials).orderBy(asc(repositionMaterials.id));
+       console.log(`Found ${allRepositionMaterials.length} reposition materials`);
 
-      // Validar que las propiedades que existen sean arrays
-      if (backupData.tables) {
-        const mainProperties = ['users', 'orders', 'repositions', 'transfers', 'notifications'];
-        for (const prop of mainProperties) {
-          if (backupData.tables.hasOwnProperty(prop) && !Array.isArray(backupData.tables[prop])) {
-            throw new Error(`Formato de respaldo inválido - tables.${prop} debe ser un array`);
-          }
-        }
-      }
+       console.log('Fetching admin passwords...');
+       const allAdminPasswords = await db.select().from(adminPasswords).orderBy(asc(adminPasswords.id));
+       console.log(`Found ${allAdminPasswords.length} admin passwords`);
 
-      let restored = {
-        users: 0,
-        orders: 0,
-        repositions: 0,
-        transfers: 0,
-        notifications: 0,
-        documents: 0,
-        agendaEvents: 0,
-        errors: 0
-      };
+       console.log('Fetching agenda events...');
+       const allAgendaEvents = await db.select().from(agendaEvents).orderBy(asc(agendaEvents.id));
+       console.log(`Found ${allAgendaEvents.length} agenda events`);
 
-      // Restaurar en orden dependiente de las relaciones
+       console.log('Fetching documents...');
+       const allDocuments = await db.select().from(documents).orderBy(asc(documents.id));
+       console.log(`Found ${allDocuments.length} documents`);
 
-      // 1. Usuarios primero (sin dependencias)
-      if (backupData.tables.users && Array.isArray(backupData.tables.users)) {
-        console.log(`Restaurando ${backupData.tables.users.length} usuarios...`);
-        for (const userData of backupData.tables.users) {
-          try {
-            const existingUser = await this.getUserByUsername(userData.username);
-            if (!existingUser) {
-              await db.insert(users).values({
-                ...userData,
-                createdAt: userData.createdAt ? new Date(userData.createdAt) : new Date()
-              });
-              restored.users++;
-              console.log(`Usuario ${userData.username} restaurado exitosamente`);
-            } else {
-              console.log(`Usuario ${userData.username} ya existe, omitiendo`);
-            }
-          } catch (error) {
-            console.error(`Error restoring user ${userData.username}:`, error);
-            restored.errors++;
-          }
-        }
-        console.log(`Usuarios procesados: ${restored.users} creados`);
-      }
+       // Crear el objeto de respaldo solo con tablas de reposiciones y usuarios
+       const backup = {
+         version: "1.0",
+         timestamp: new Date().toISOString(),
+         system: "JASANA",
+         tables: {
+           users: allUsers,
+           notifications: allNotifications,
+           repositions: allRepositions,
+           repositionPieces: allRepositionPieces,
+           repositionProducts: allRepositionProducts,
+           repositionTimers: allRepositionTimers,
+           repositionTransfers: allRepositionTransfers,
+           repositionHistory: allRepositionHistory,
+           repositionMaterials: allRepositionMaterials,
+           adminPasswords: allAdminPasswords,
+           agendaEvents: allAgendaEvents,
+           documents: allDocuments
+         },
+         stats: {
+           totalUsers: allUsers.length,
+           totalNotifications: allNotifications.length,
+           totalRepositions: allRepositions.length,
+           totalRepositionPieces: allRepositionPieces.length,
+           totalRepositionProducts: allRepositionProducts.length,
+           totalRepositionTimers: allRepositionTimers.length,
+           totalRepositionTransfers: allRepositionTransfers.length,
+           totalRepositionHistory: allRepositionHistory.length,
+           totalRepositionMaterials: allRepositionMaterials.length,
+           totalAdminPasswords: allAdminPasswords.length,
+           totalAgendaEvents: allAgendaEvents.length,
+           totalDocuments: allDocuments.length
+         }
+       };
 
-      // 2. Órdenes
-      if (backupData.tables.orders) {
-        for (const orderData of backupData.tables.orders) {
-          try {
-            const existingOrder = await db.select().from(orders).where(eq(orders.folio, orderData.folio)).limit(1);
-            if (existingOrder.length === 0) {
-              await db.insert(orders).values({
-                ...orderData,
-                createdAt: orderData.createdAt ? new Date(orderData.createdAt) : new Date(),
-                completedAt: orderData.completedAt ? new Date(orderData.completedAt) : null
-              });
-              restored.orders++;
-            }
-          } catch (error) {
-            console.error(`Error restoring order ${orderData.folio}:`, error);
-            restored.errors++;
-          }
-        }
-      }
+       console.log('Complete system backup created successfully');
+       console.log('Backup stats:', backup.stats);
 
-      // 3. Reposiciones
-      if (backupData.tables.repositions && Array.isArray(backupData.tables.repositions)) {
-        console.log(`Restaurando ${backupData.tables.repositions.length} reposiciones...`);
-        for (const repositionData of backupData.tables.repositions) {
-          try {
-            const existingReposition = await db.select().from(repositions).where(eq(repositions.folio, repositionData.folio)).limit(1);
-            if (existingReposition.length === 0) {
-              await db.insert(repositions).values({
-                ...repositionData,
-                createdAt: repositionData.createdAt ? new Date(repositionData.createdAt) : new Date(),
-                completedAt: repositionData.completedAt ? new Date(repositionData.completedAt) : null
-              });
-              restored.repositions++;
-            } else {
-              console.log(`Reposición ${repositionData.folio} ya existe, omitiendo`);
-            }
-          } catch (error) {
-            console.error(`Error restoring reposition ${repositionData.folio}:`, error);
-            restored.errors++;
-          }
-        }
-        console.log(`Reposiciones procesadas: ${restored.repositions} creadas`);
-      }
+       // Log de verificación detallado del contenido
+       console.log('=== BACKUP VERIFICATION ===');
+       console.log('Tables in backup:', Object.keys(backup.tables));
+       console.log('Repositions in backup:', backup.tables.repositions.length);
+       if (backup.tables.repositions.length > 0) {
+         console.log('Sample repositions:', backup.tables.repositions.slice(0, 3).map(r => ({
+           id: r.id,
+           folio: r.folio,
+           status: r.status
+         })));
+       }
+       console.log('RepositionPieces in backup:', backup.tables.repositionPieces.length);
+       console.log('RepositionHistory in backup:', backup.tables.repositionHistory.length);
+       console.log('RepositionTransfers in backup:', backup.tables.repositionTransfers.length);
+       console.log('RepositionProducts in backup:', backup.tables.repositionProducts.length);
+       console.log('RepositionTimers in backup:', backup.tables.repositionTimers.length);
+       console.log('RepositionMaterials in backup:', backup.tables.repositionMaterials.length);
+       console.log('=== END VERIFICATION ===');
 
-      // 4. Piezas de órdenes
-      if (backupData.tables.orderPieces) {
-        for (const pieceData of backupData.tables.orderPieces) {
-          try {
-            await db.insert(orderPieces).values({
-              ...pieceData,
-              updatedAt: pieceData.updatedAt ? new Date(pieceData.updatedAt) : new Date()
-            }).onConflictDoNothing();
-          } catch (error) {
-            console.error(`Error restoring order piece:`, error);
-            restored.errors++;
-          }
-        }
-      }
+       return backup;
+     } catch (error) {
+       console.error('Backup complete system error:', error);
+       throw new Error('Error al crear respaldo completo del sistema: ' + error.message);
+     }
+   }
 
-      // 5. Piezas de reposiciones
-      if (backupData.tables.repositionPieces) {
-        for (const pieceData of backupData.tables.repositionPieces) {
-          try {
-            await db.insert(repositionPieces).values(pieceData).onConflictDoNothing();
-          } catch (error) {
-            console.error(`Error restoring reposition piece:`, error);
-            restored.errors++;
-          }
-        }
-      }
+   async restoreCompleteSystem(backupData: any): Promise<any> {
+     try {
+       if (!backupData || typeof backupData !== 'object') {
+         throw new Error('Formato de respaldo inválido - no es un objeto válido');
+       }
 
-      // 6. Productos de reposiciones
-      if (backupData.tables.repositionProducts) {
-        for (const productData of backupData.tables.repositionProducts) {
-          try {
-            await db.insert(repositionProducts).values(productData).onConflictDoNothing();
-          } catch (error) {
-            console.error(`Error restoring reposition product:`, error);
-            restored.errors++;
-          }
-        }
-      }
+       console.log('Backup data keys:', Object.keys(backupData));
 
-      // 7. Transferencias
-      if (backupData.tables.transfers) {
-        for (const transferData of backupData.tables.transfers) {
-          try {
-            await db.insert(transfers).values({
-              ...transferData,
-              createdAt: transferData.createdAt ? new Date(transferData.createdAt) : new Date(),
-              processedAt: transferData.processedAt ? new Date(transferData.processedAt) : null
-            }).onConflictDoNothing();
-            restored.transfers++;
-          } catch (error) {
-            console.error(`Error restoring transfer:`, error);
-            restored.errors++;
-          }
-        }
-      }
+       // Detectar el tipo de respaldo
+       const isUserBackup = backupData.users && Array.isArray(backupData.users) && !backupData.tables;
+       const isSystemBackup = backupData.tables && typeof backupData.tables === 'object';
 
-      // 8. Transferencias de reposiciones
-      if (backupData.tables.repositionTransfers) {
-        for (const transferData of backupData.tables.repositionTransfers) {
-          try {
-            await db.insert(repositionTransfers).values({
-              ...transferData,
-              createdAt: transferData.createdAt ? new Date(transferData.createdAt) : new Date(),
-              processedAt: transferData.processedAt ? new Date(transferData.processedAt) : null
-            }).onConflictDoNothing();
-          } catch (error) {
-            console.error(`Error restoring reposition transfer:`, error);
-            restored.errors++;
-          }
-        }
-      }
+       if (!isUserBackup && !isSystemBackup) {
+         throw new Error(`Formato de respaldo inválido - debe ser un respaldo de usuarios o del sistema completo. Propiedades encontradas: ${Object.keys(backupData).join(', ')}`);
+       }
 
-      // 9. Historial
-      if (backupData.tables.orderHistory) {
-        for (const historyData of backupData.tables.orderHistory) {
-          try {
-            await db.insert(orderHistory).values({
-              ...historyData,
-              createdAt: historyData.createdAt ? new Date(historyData.createdAt) : new Date()
-            }).onConflictDoNothing();
-          } catch (error) {
-            console.error(`Error restoring order history:`, error);
-            restored.errors++;
-          }
-        }
-      }
+       // Si es un respaldo de usuarios, convertirlo al formato de sistema
+       if (isUserBackup) {
+         console.log('Detectado respaldo de usuarios, convirtiendo a formato de sistema...');
+         const originalUsers = backupData.users;
+         backupData = {
+           version: backupData.version || "1.0",
+           timestamp: backupData.timestamp || new Date().toISOString(),
+           system: "JASANA",
+           tables: {
+             users: originalUsers
+           }
+         };
+         console.log('Respaldo convertido exitosamente con', originalUsers.length, 'usuarios');
+       }
 
-      if (backupData.tables.repositionHistory) {
-        for (const historyData of backupData.tables.repositionHistory) {
-          try {
-            await db.insert(repositionHistory).values({
-              ...historyData,
-              createdAt: historyData.createdAt ? new Date(historyData.createdAt) : new Date()
-            }).onConflictDoNothing();
-          } catch (error) {
-            console.error(`Error restoring reposition history:`, error);
-            restored.errors++;
-          }
-        }
-      }
+       // Validar que las propiedades que existen sean arrays
+       if (backupData.tables) {
+         const mainProperties = ['users', 'repositions', 'notifications'];
+         for (const prop of mainProperties) {
+           if (backupData.tables.hasOwnProperty(prop) && !Array.isArray(backupData.tables[prop])) {
+             throw new Error(`Formato de respaldo inválido - tables.${prop} debe ser un array`);
+           }
+         }
+       }
 
-      // 10. Notificaciones
-      if (backupData.tables.notifications) {
-        for (const notificationData of backupData.tables.notifications) {
-          try {
-            await db.insert(notifications).values({
-              ...notificationData,
-              createdAt: notificationData.createdAt ? new Date(notificationData.createdAt) : new Date()
-            }).onConflictDoNothing();
-            restored.notifications++;
-          } catch (error) {
-            console.error(`Error restoring notification:`, error);
-            restored.errors++;
-          }
-        }
-      }
+       let restored = {
+         users: 0,
+         notifications: 0,
+         adminPasswords: 0,
+         agendaEvents: 0,
+         documents: 0,
+         repositions: 0,
+         repositionPieces: 0,
+         repositionProducts: 0,
+         repositionTimers: 0,
+         repositionTransfers: 0,
+         repositionHistory: 0,
+         repositionMaterials: 0,
+         errors: 0
+       };
 
-      // 11. Documentos
-      if (backupData.tables.documents) {
-        for (const documentData of backupData.tables.documents) {
-          try {
-            await db.insert(documents).values({
-              ...documentData,
-              createdAt: documentData.createdAt ? new Date(documentData.createdAt) : new Date()
-            }).onConflictDoNothing();
-            restored.documents++;
-          } catch (error) {
-            console.error(`Error restoring document:`, error);
-            restored.errors++;
-          }
-        }
-      }
+       // Restaurar en orden dependiente de las relaciones
 
-      // 12. Eventos de agenda
-      if (backupData.tables.agendaEvents) {
-        for (const eventData of backupData.tables.agendaEvents) {
-          try {
-            await db.insert(agendaEvents).values({
-              ...eventData,
-              createdAt: eventData.createdAt ? new Date(eventData.createdAt) : new Date(),
-              updatedAt: eventData.updatedAt ? new Date(eventData.updatedAt) : new Date()
-            }).onConflictDoNothing();
-            restored.agendaEvents++;
-          } catch (error) {
-            console.error(`Error restoring agenda event:`, error);
-            restored.errors++;
-          }
-        }
-      }
+       // 1. Usuarios primero (sin dependencias)
+       if (backupData.tables.users && Array.isArray(backupData.tables.users)) {
+         console.log(`Restaurando ${backupData.tables.users.length} usuarios...`);
+         for (const userData of backupData.tables.users) {
+           try {
+             const existingUser = await this.getUserByUsername(userData.username);
+             if (!existingUser) {
+               await db.insert(users).values({
+                 ...userData,
+                 createdAt: userData.createdAt ? new Date(userData.createdAt) : new Date()
+               });
+               restored.users++;
+               console.log(`Usuario ${userData.username} restaurado exitosamente`);
+             } else {
+               console.log(`Usuario ${userData.username} ya existe, omitiendo`);
+             }
+           } catch (error) {
+             console.error(`Error restoring user ${userData.username}:`, error);
+             restored.errors++;
+           }
+         }
+         console.log(`Usuarios procesados: ${restored.users} creados`);
+       }
 
-      // 13. Timers de reposiciones
-      if (backupData.tables.repositionTimers) {
-        for (const timerData of backupData.tables.repositionTimers) {
-          try {
-            await db.insert(repositionTimers).values({
-              ...timerData,
-              createdAt: timerData.createdAt ? new Date(timerData.createdAt) : new Date(),
-              startTime: timerData.startTime ? new Date(timerData.startTime) : null,
-              endTime: timerData.endTime ? new Date(timerData.endTime) : null
-            }).onConflictDoNothing();
-          } catch (error) {
-            console.error(`Error restoring reposition timer:`, error);
-            restored.errors++;
-          }
-        }
-      }
+       // 2. Reposiciones
+       if (backupData.tables.repositions && Array.isArray(backupData.tables.repositions)) {
+         console.log(`Restaurando ${backupData.tables.repositions.length} reposiciones...`);
+         
+         // Log sample of repositions being restored
+         if (backupData.tables.repositions.length > 0) {
+           console.log('Sample repositions to restore:', backupData.tables.repositions.slice(0, 3).map(r => ({
+             folio: r.folio,
+             status: r.status,
+             type: r.type,
+             solicitanteArea: r.solicitanteArea
+           })));
+         }
+         
+         for (const repositionData of backupData.tables.repositions) {
+           try {
+             const existingReposition = await db.select().from(repositions).where(eq(repositions.folio, repositionData.folio)).limit(1);
+             if (existingReposition.length === 0) {
+               const insertData = {
+                 ...repositionData,
+                 createdAt: repositionData.createdAt ? new Date(repositionData.createdAt) : new Date(),
+                 completedAt: repositionData.completedAt ? new Date(repositionData.completedAt) : null,
+                 approvedAt: repositionData.approvedAt ? new Date(repositionData.approvedAt) : null
+               };
+               
+               // Log what we're inserting
+               console.log(`Inserting reposition ${repositionData.folio} with status: ${repositionData.status}`);
+               
+               await db.insert(repositions).values(insertData);
+               restored.repositions++;
+             } else {
+               console.log(`Reposición ${repositionData.folio} ya existe, omitiendo`);
+             }
+           } catch (error) {
+             console.error(`Error restoring reposition ${repositionData.folio}:`, error);
+             restored.errors++;
+           }
+         }
+         console.log(`Reposiciones procesadas: ${restored.repositions} creadas`);
+         
+         // Verify repositions were inserted
+         const totalAfterRestore = await db.select({ count: sql<number>`COUNT(*)::int` }).from(repositions);
+         console.log(`Total repositions in database after restore: ${totalAfterRestore[0]?.count || 0}`);
+       }
 
-      // 14. Materiales de reposiciones
-      if (backupData.tables.repositionMaterials) {
-        for (const materialData of backupData.tables.repositionMaterials) {
-          try {
-            await db.insert(repositionMaterials).values(materialData).onConflictDoNothing();
-          } catch (error) {
-            console.error(`Error restoring reposition material:`, error);
-            restored.errors++;
-          }
-        }
-      }
+       // 3. Piezas de reposiciones
+       if (backupData.tables.repositionPieces && Array.isArray(backupData.tables.repositionPieces)) {
+         console.log(`Restaurando ${backupData.tables.repositionPieces.length} piezas de reposiciones...`);
+         for (const pieceData of backupData.tables.repositionPieces) {
+           try {
+             await db.insert(repositionPieces).values(pieceData).onConflictDoNothing();
+             restored.repositionPieces++;
+           } catch (error) {
+             console.error(`Error restoring reposition piece:`, error);
+             restored.errors++;
+           }
+         }
+         console.log(`Piezas de reposiciones procesadas: ${restored.repositionPieces} restauradas`);
+       }
 
-      // 15. Contraseñas de admin
-      if (backupData.tables.adminPasswords) {
-        for (const passwordData of backupData.tables.adminPasswords) {
-          try {
-            await db.insert(adminPasswords).values({
-              ...passwordData,
-              createdAt: passwordData.createdAt ? new Date(passwordData.createdAt) : new Date()
-            }).onConflictDoNothing();
-          } catch (error) {
-            console.error(`Error restoring admin password:`, error);
-            restored.errors++;
-          }
-        }
-      }
+       // 4. Productos de reposiciones
+       if (backupData.tables.repositionProducts && Array.isArray(backupData.tables.repositionProducts)) {
+         console.log(`Restaurando ${backupData.tables.repositionProducts.length} productos de reposiciones...`);
+         for (const productData of backupData.tables.repositionProducts) {
+           try {
+             await db.insert(repositionProducts).values(productData).onConflictDoNothing();
+             restored.repositionProducts++;
+           } catch (error) {
+             console.error(`Error restoring reposition product:`, error);
+             restored.errors++;
+           }
+         }
+         console.log(`Productos de reposiciones procesadas: ${restored.repositionProducts} restaurados`);
+       }
 
-      console.log('Complete system restore completed');
+       // 5. Transferencias de reposiciones
+       if (backupData.tables.repositionTransfers && Array.isArray(backupData.tables.repositionTransfers)) {
+         console.log(`Restaurando ${backupData.tables.repositionTransfers.length} transferencias de reposiciones...`);
+         for (const transferData of backupData.tables.repositionTransfers) {
+           try {
+             await db.insert(repositionTransfers).values({
+               ...transferData,
+               createdAt: transferData.createdAt ? new Date(transferData.createdAt) : new Date(),
+               processedAt: transferData.processedAt ? new Date(transferData.processedAt) : null
+             }).onConflictDoNothing();
+             restored.repositionTransfers++;
+           } catch (error) {
+             console.error(`Error restoring reposition transfer:`, error);
+             restored.errors++;
+           }
+         }
+         console.log(`Transferencias de reposiciones procesadas: ${restored.repositionTransfers} restauradas`);
+       }
 
-      const totalRestored = Object.values(restored).reduce((sum: number, val: number) => 
-        typeof val === 'number' ? sum + val : sum, 0
-      );
+       // 6. Historial de reposiciones
+       if (backupData.tables.repositionHistory && Array.isArray(backupData.tables.repositionHistory)) {
+         console.log(`Restaurando ${backupData.tables.repositionHistory.length} entradas de historial de reposiciones...`);
+         for (const historyData of backupData.tables.repositionHistory) {
+           try {
+             await db.insert(repositionHistory).values({
+               ...historyData,
+               createdAt: historyData.createdAt ? new Date(historyData.createdAt) : new Date()
+             }).onConflictDoNothing();
+             restored.repositionHistory++;
+           } catch (error) {
+             console.error(`Error restoring reposition history:`, error);
+             restored.errors++;
+           }
+         }
+         console.log(`Historial de reposiciones procesado: ${restored.repositionHistory} entradas restauradas`);
+       }
 
-      return {
-        message: `Restauración del sistema completada: ${totalRestored} elementos restaurados total`,
-        restored,
-        summary: {
-          totalRestored,
-          hasErrors: restored.errors > 0
-        },
-        backupInfo: {
-          version: backupData.version,
-          timestamp: backupData.timestamp,
-          originalStats: backupData.stats
-        }
-      };
-    } catch (error) {
-      console.error('Restore complete system error:', error);
+       // 7. Notificaciones
+       if (backupData.tables.notifications) {
+         for (const notificationData of backupData.tables.notifications) {
+           try {
+             await db.insert(notifications).values({
+               ...notificationData,
+               createdAt: notificationData.createdAt ? new Date(notificationData.createdAt) : new Date()
+             }).onConflictDoNothing();
+             restored.notifications++;
+           } catch (error) {
+             console.error(`Error restoring notification:`, error);
+             restored.errors++;
+           }
+         }
+       }
 
-      // Si ya es un error de validación, no lo anidemos
-      if (error.message.includes('Formato de respaldo inválido')) {
-        throw error;
-      }
+       // 8. Documentos
+       if (backupData.tables.documents) {
+         for (const documentData of backupData.tables.documents) {
+           try {
+             await db.insert(documents).values({
+               ...documentData,
+               createdAt: documentData.createdAt ? new Date(documentData.createdAt) : new Date()
+             }).onConflictDoNothing();
+             restored.documents++;
+           } catch (error) {
+             console.error(`Error restoring document:`, error);
+             restored.errors++;
+           }
+         }
+       }
 
-      throw new Error(`Error al restaurar el sistema completo: ${error.message}`);
-    }
-  }
+       // 9. Eventos de agenda
+       if (backupData.tables.agendaEvents) {
+         for (const eventData of backupData.tables.agendaEvents) {
+           try {
+             await db.insert(agendaEvents).values({
+               ...eventData,
+               createdAt: eventData.createdAt ? new Date(eventData.createdAt) : new Date(),
+               updatedAt: eventData.updatedAt ? new Date(eventData.updatedAt) : new Date()
+             }).onConflictDoNothing();
+             restored.agendaEvents++;
+           } catch (error) {
+             console.error(`Error restoring agenda event:`, error);
+             restored.errors++;
+           }
+         }
+       }
+
+       // 10. Timers de reposiciones
+       if (backupData.tables.repositionTimers && Array.isArray(backupData.tables.repositionTimers)) {
+         console.log(`Restaurando ${backupData.tables.repositionTimers.length} timers de reposiciones...`);
+         for (const timerData of backupData.tables.repositionTimers) {
+           try {
+             await db.insert(repositionTimers).values({
+               ...timerData,
+               createdAt: timerData.createdAt ? new Date(timerData.createdAt) : new Date(),
+               startTime: timerData.startTime ? new Date(timerData.startTime) : null,
+               endTime: timerData.endTime ? new Date(timerData.endTime) : null
+             }).onConflictDoNothing();
+             restored.repositionTimers++;
+           } catch (error) {
+             console.error(`Error restoring reposition timer:`, error);
+             restored.errors++;
+           }
+         }
+         console.log(`Timers de reposiciones procesados: ${restored.repositionTimers} restaurados`);
+       }
+
+       // 11. Materiales de reposiciones
+       if (backupData.tables.repositionMaterials && Array.isArray(backupData.tables.repositionMaterials)) {
+         console.log(`Restaurando ${backupData.tables.repositionMaterials.length} materiales de reposiciones...`);
+         for (const materialData of backupData.tables.repositionMaterials) {
+           try {
+             await db.insert(repositionMaterials).values(materialData).onConflictDoNothing();
+             restored.repositionMaterials++;
+           } catch (error) {
+             console.error(`Error restoring reposition material:`, error);
+             restored.errors++;
+           }
+         }
+         console.log(`Materiales de reposiciones procesados: ${restored.repositionMaterials} restaurados`);
+       }
+
+       // 12. Contraseñas de admin
+       if (backupData.tables.adminPasswords && Array.isArray(backupData.tables.adminPasswords)) {
+         console.log(`Restaurando ${backupData.tables.adminPasswords.length} contraseñas de admin...`);
+         for (const passwordData of backupData.tables.adminPasswords) {
+           try {
+             await db.insert(adminPasswords).values({
+               ...passwordData,
+               createdAt: passwordData.createdAt ? new Date(passwordData.createdAt) : new Date()
+             }).onConflictDoNothing();
+             restored.adminPasswords++;
+           } catch (error) {
+             console.error(`Error restoring admin password:`, error);
+             restored.errors++;
+           }
+         }
+         console.log(`Contraseñas de admin procesadas: ${restored.adminPasswords} restauradas`);
+       }
+
+       console.log('Complete system restore completed');
+
+       const totalRestored = Object.values(restored).reduce((sum: number, val: number) =>
+         typeof val === 'number' ? sum + val : sum, 0
+       );
+
+       return {
+         message: `Restauración del sistema completada: ${totalRestored} elementos restaurados total`,
+         restored,
+         summary: {
+           totalRestored,
+           hasErrors: restored.errors > 0
+         },
+         backupInfo: {
+           version: backupData.version,
+           timestamp: backupData.timestamp,
+           originalStats: backupData.stats
+         }
+       };
+     } catch (error) {
+       console.error('Restore complete system error:', error);
+
+       // Si ya es un error de validación, no lo anidemos
+       if (error.message.includes('Formato de respaldo inválido')) {
+         throw error;
+       }
+
+       throw new Error(`Error al restaurar el sistema completo: ${error.message}`);
+     }
+   }
 }
 
 export const storage = new DatabaseStorage();

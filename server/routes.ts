@@ -4,12 +4,12 @@ import { createServer, type Server } from "http";
 import { WebSocketServer, WebSocket } from "ws";
 import { setupAuth } from "./auth";
 import { storage } from "./storage";
-import { insertOrderSchema, insertTransferSchema, insertRepositionSchema, insertRepositionPieceSchema, insertRepositionTransferSchema, insertAdminPasswordSchema, type Area, type RepositionType } from "@shared/schema";
+import { insertOrderSchema, insertTransferSchema, insertRepositionSchema, insertRepositionPieceSchema, insertRepositionTransferSchema, insertAdminPasswordSchema, type Area, type RepositionType, type RepositionStatus } from "@shared/schema";
 import { z } from "zod";
 import bcrypt from "bcrypt";
 import { eq, desc, and, or, ne, isNotNull, isNull, count } from 'drizzle-orm';
 import { db } from './db';
-import { repositionTransfers } from '@shared/schema';
+import { repositionTransfers, repositions } from '@shared/schema';
 import { authenticateToken } from './auth';
 import path from 'path';
 import fs from 'fs';
@@ -1650,7 +1650,7 @@ function registerRepositionRoutes(app: Express) {
       res.status(400).json({ message: error instanceof Error ? error.message : "Error al registrar tiempo manual" });
     }
   });
-  
+
   router.get("/:id/timer", async (req, res) => {
     if (!req.isAuthenticated()) return res.status(401).json({ message: "Autenticación requerida" });
 
