@@ -162,7 +162,7 @@ export function CustomSidebar({ onShowNotifications, onCreateOrder, onCreateRepo
               JASANA
             </h1>
             <p className="text-xs text-muted-foreground">Sistema de Pedidos</p>
-            <p className="text-xs text-muted-foreground">V3.0.8 Ag25</p>
+            <p className="text-xs text-muted-foreground">V3.0.9 Ag25</p>
           </div>
           <SidebarTrigger className="ml-auto h-6 w-6 group-data-[collapsible=icon]:ml-0" />
         </div>

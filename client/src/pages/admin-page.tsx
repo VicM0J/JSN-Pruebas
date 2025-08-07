@@ -13,7 +13,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { Settings, Users, RotateCcw, Shield, TrendingUp, Package, Edit2, Trash2, UserPlus, Download, Database, Bell, FileText, Activity, AlertTriangle, Upload } from "lucide-react";
+import { Settings, Users, RotateCcw, Shield, TrendingUp, Package, Edit2, Trash2, UserPlus, Download, Database, Bell, FileText, Activity, AlertTriangle, Upload, Loader2 } from "lucide-react";
 import { type Order } from "@shared/schema";
 
 // Define User type locally with 'active' property if not present in @shared/schema
@@ -46,6 +46,9 @@ export default function AdminPage() {
   const [deleteUsersChecked, setDeleteUsersChecked] = useState(false);
   const [showRestoreModal, setShowRestoreModal] = useState(false);
   const [restoreFile, setRestoreFile] = useState<File | null>(null);
+  const [showSystemBackupModal, setShowSystemBackupModal] = useState(false);
+  const [showSystemRestoreModal, setShowSystemRestoreModal] = useState(false);
+  const [systemRestoreFile, setSystemRestoreFile] = useState<File | null>(null);
 
   if (user?.area !== 'admin') {
     return (
@@ -249,6 +252,70 @@ export default function AdminPage() {
     }
   });
 
+  const backupCompleteSystemMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest("GET", "/api/admin/backup-complete-system");
+      return res.blob();
+    },
+    onSuccess: (blob) => {
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `backup-completo-jasana-${new Date().toISOString().split('T')[0]}.json`;
+      link.click();
+      window.URL.revokeObjectURL(url);
+      toast({
+        title: "Respaldo completo completado",
+        description: "El respaldo completo del sistema ha sido descargado exitosamente",
+      });
+      setShowSystemBackupModal(false);
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error al generar respaldo completo",
+        description: error.message,
+        variant: "destructive"
+      });
+    }
+  });
+
+  const restoreCompleteSystemMutation = useMutation({
+    mutationFn: async (file: File) => {
+      const formData = new FormData();
+      formData.append('backup', file);
+      const res = await fetch('/api/admin/restore-complete-system', {
+        method: 'POST',
+        body: formData,
+        credentials: 'include'
+      });
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.message || 'Error al restaurar el sistema');
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Restauración completa completada",
+        description: "El sistema ha sido restaurado exitosamente",
+      });
+      setShowSystemRestoreModal(false);
+      setSystemRestoreFile(null);
+      queryClient.invalidateQueries();
+      // Recargar la página después de una restauración completa
+      setTimeout(() => {
+        window.location.reload();
+      }, 2000);
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error al restaurar el sistema",
+        description: error.message,
+        variant: "destructive"
+      });
+    }
+  });
+
   const openEditModal = (u: User) => {
     setEditUser(u);
     setEditForm({ name: u.name, username: u.username, area: u.area, newPassword: "" });
@@ -318,6 +385,26 @@ export default function AdminPage() {
       return;
     }
     restoreUsersMutation.mutate(restoreFile);
+  };
+
+  const handleBackupSystem = () => {
+    setShowSystemBackupModal(true);
+  };
+
+  const handleConfirmBackupSystem = () => {
+    backupCompleteSystemMutation.mutate();
+  };
+
+  const handleRestoreSystem = () => {
+    if (!systemRestoreFile) {
+      toast({
+        title: "Error",
+        description: "Por favor selecciona un archivo de respaldo completo",
+        variant: "destructive"
+      });
+      return;
+    }
+    restoreCompleteSystemMutation.mutate(systemRestoreFile);
   };
 
   const handleExportReports = () => {
@@ -680,50 +767,54 @@ export default function AdminPage() {
           </CardContent>
         </Card>
 
-        {/* System Configuration Funcional */}
-      <Card>
-        <CardHeader>
+        {/* System Configuration Mejorada */}
+      <Card className="overflow-hidden">
+        <CardHeader className="bg-gradient-to-r from-slate-50 to-blue-50 dark:from-slate-800 dark:to-blue-900">
           <CardTitle className="flex items-center space-x-2">
             <Settings className="h-5 w-5" />
             <span>Configuración del Sistema</span>
           </CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-4">
-              <h3 className="font-semibold text-gray-800">Información del Sistema</h3>
+        <CardContent className="p-0">
+          <div className="grid grid-cols-1 lg:grid-cols-3 divide-y lg:divide-y-0 lg:divide-x divide-gray-200">
+            {/* Información del Sistema */}
+            <div className="p-6 space-y-4">
+              <h3 className="font-semibold text-gray-800 flex items-center gap-2">
+                <Database className="h-4 w-4 text-blue-600" />
+                Información del Sistema
+              </h3>
               <div className="space-y-3">
-                <div className="flex justify-between items-center p-4 bg-gradient-to-r from-blue-50 to-blue-100 rounded-lg border border-blue-200">
+                <div className="flex justify-between items-center p-3 bg-gradient-to-r from-blue-50 to-blue-100 rounded-lg border border-blue-200">
                   <div className="flex items-center space-x-3">
-                    <div className="w-10 h-10 bg-blue-500 rounded-lg flex items-center justify-center">
-                      <Package className="text-white h-5 w-5" />
+                    <div className="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center">
+                      <Package className="text-white h-4 w-4" />
                     </div>
                     <div>
-                      <span className="text-sm font-medium text-gray-800">Nombre de la empresa</span>
+                      <span className="text-xs font-medium text-gray-800">Empresa</span>
                       <p className="text-xs text-gray-600">Sistema de gestión</p>
                     </div>
                   </div>
                   <span className="text-sm font-bold text-blue-700">JASANA</span>
                 </div>
-                <div className="flex justify-between items-center p-4 bg-gradient-to-r from-green-50 to-green-100 rounded-lg border border-green-200">
+                <div className="flex justify-between items-center p-3 bg-gradient-to-r from-green-50 to-green-100 rounded-lg border border-green-200">
                   <div className="flex items-center space-x-3">
-                    <div className="w-10 h-10 bg-green-500 rounded-lg flex items-center justify-center">
-                      <Activity className="text-white h-5 w-5" />
+                    <div className="w-8 h-8 bg-green-500 rounded-lg flex items-center justify-center">
+                      <Activity className="text-white h-4 w-4" />
                     </div>
                     <div>
-                      <span className="text-sm font-medium text-gray-800">Áreas activas</span>
+                      <span className="text-xs font-medium text-gray-800">Áreas activas</span>
                       <p className="text-xs text-gray-600">Módulos habilitados</p>
                     </div>
                   </div>
                   <span className="text-sm font-bold text-green-700">11 áreas</span>
                 </div>
-                <div className="flex justify-between items-center p-4 bg-gradient-to-r from-purple-50 to-purple-100 rounded-lg border border-purple-200">
+                <div className="flex justify-between items-center p-3 bg-gradient-to-r from-purple-50 to-purple-100 rounded-lg border border-purple-200">
                   <div className="flex items-center space-x-3">
-                    <div className="w-10 h-10 bg-purple-500 rounded-lg flex items-center justify-center">
-                      <Database className="text-white h-5 w-5" />
+                    <div className="w-8 h-8 bg-purple-500 rounded-lg flex items-center justify-center">
+                      <Database className="text-white h-4 w-4" />
                     </div>
                     <div>
-                      <span className="text-sm font-medium text-gray-800">Base de datos</span>
+                      <span className="text-xs font-medium text-gray-800">Base de datos</span>
                       <p className="text-xs text-gray-600">Estado de conexión</p>
                     </div>
                   </div>
@@ -732,74 +823,228 @@ export default function AdminPage() {
               </div>
             </div>
 
-            <div className="space-y-4">
-              <h3 className="font-semibold text-gray-800">Herramientas de Administrador</h3>
-              <div className="space-y-3">
-                <Button 
-                  variant="outline" 
-                  className="w-full justify-start h-12 bg-gradient-to-r from-gray-50 to-gray-100 hover:from-gray-100 hover:to-gray-200 border-gray-300" 
-                  onClick={handleBackupUsers}
-                  disabled={backupUsersMutation.isPending}
-                >
-                  <Database className="mr-3 h-5 w-5 text-blue-600" />
-                  <div className="text-left">
-                    <div className="font-medium">Respaldar Usuarios</div>
-                    <div className="text-xs text-gray-500">Crear copia de seguridad de usuarios</div>
+            {/* Respaldos del Sistema */}
+            <div className="p-6 space-y-4">
+              <h3 className="font-semibold text-gray-800 flex items-center gap-2">
+                <Download className="h-4 w-4 text-indigo-600" />
+                Respaldos del Sistema
+              </h3>
+              
+              {/* Respaldo Completo */}
+              <div className="bg-gradient-to-r from-indigo-50 to-blue-50 p-4 rounded-lg border border-indigo-200">
+                <div className="flex items-center gap-2 mb-3">
+                  <Database className="h-4 w-4 text-indigo-600" />
+                  <span className="text-sm font-semibold text-indigo-900">Sistema Completo</span>
+                </div>
+                <div className="grid grid-cols-1 gap-2">
+                  <Button 
+                    size="sm"
+                    onClick={() => backupCompleteSystemMutation.mutate()}
+                    disabled={backupCompleteSystemMutation.isPending}
+                    className="bg-indigo-600 hover:bg-indigo-700 h-8 text-xs"
+                  >
+                    {backupCompleteSystemMutation.isPending ? (
+                      <>
+                        <Loader2 className="h-3 w-3 animate-spin" />
+                        Generando...
+                      </>
+                    ) : (
+                      <>
+                        <Download className="h-3 w-3" />
+                        Respaldar Todo
+                      </>
+                    )}
+                  </Button>
+                  <div>
+                    <input
+                      type="file"
+                      accept=".json"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          restoreCompleteSystemMutation.mutate(file);
+                          e.target.value = '';
+                        }
+                      }}
+                      className="hidden"
+                      ref={(input) => {
+                        if (input) {
+                          (window as any).systemRestoreFileInput = input;
+                        }
+                      }}
+                    />
+                    <Button 
+                      size="sm"
+                      onClick={() => {
+                        (window as any).systemRestoreFileInput?.click();
+                      }}
+                      disabled={restoreCompleteSystemMutation.isPending}
+                      variant="outline"
+                      className="w-full h-8 text-xs border-indigo-300 text-indigo-700 hover:bg-indigo-50"
+                    >
+                      {restoreCompleteSystemMutation.isPending ? (
+                        <>
+                          <Loader2 className="h-3 w-3 animate-spin" />
+                          Restaurando...
+                        </>
+                      ) : (
+                        <>
+                          <Upload className="h-3 w-3" />
+                          Restaurar Todo
+                        </>
+                      )}
+                    </Button>
                   </div>
-                </Button>
-                <Button 
-                  variant="outline" 
-                  className="w-full justify-start h-12 bg-gradient-to-r from-gray-50 to-gray-100 hover:from-gray-100 hover:to-gray-200 border-gray-300" 
-                  onClick={() => setShowRestoreModal(true)}
-                >
-                  <Upload className="mr-3 h-5 w-5 text-green-600" />
-                  <div className="text-left">
-                    <div className="font-medium">Restaurar Usuarios</div>
-                    <div className="text-xs text-gray-500">Restaurar desde copia de seguridad</div>
+                </div>
+                <p className="text-xs text-indigo-700 mt-2">
+                  Incluye toda la información del sistema
+                </p>
+              </div>
+
+              {/* Respaldo de Usuarios */}
+              <div className="bg-gradient-to-r from-emerald-50 to-green-50 p-4 rounded-lg border border-emerald-200">
+                <div className="flex items-center gap-2 mb-3">
+                  <Users className="h-4 w-4 text-emerald-600" />
+                  <span className="text-sm font-semibold text-emerald-900">Solo Usuarios</span>
+                </div>
+                <div className="grid grid-cols-1 gap-2">
+                  <Button 
+                    size="sm"
+                    onClick={() => backupUsersMutation.mutate()}
+                    disabled={backupUsersMutation.isPending}
+                    className="bg-emerald-600 hover:bg-emerald-700 h-8 text-xs"
+                  >
+                    {backupUsersMutation.isPending ? (
+                      <>
+                        <Loader2 className="h-3 w-3 animate-spin" />
+                        Generando...
+                      </>
+                    ) : (
+                      <>
+                        <Download className="h-3 w-3" />
+                        Respaldar Usuarios
+                      </>
+                    )}
+                  </Button>
+                  <div>
+                    <input
+                      type="file"
+                      accept=".json"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          restoreUsersMutation.mutate(file);
+                          e.target.value = '';
+                        }
+                      }}
+                      className="hidden"
+                      ref={(input) => {
+                        if (input) {
+                          (window as any).userRestoreFileInput = input;
+                        }
+                      }}
+                    />
+                    <Button 
+                      size="sm"
+                      onClick={() => {
+                        (window as any).userRestoreFileInput?.click();
+                      }}
+                      disabled={restoreUsersMutation.isPending}
+                      variant="outline"
+                      className="w-full h-8 text-xs border-emerald-300 text-emerald-700 hover:bg-emerald-50"
+                    >
+                      {restoreUsersMutation.isPending ? (
+                        <>
+                          <Loader2 className="h-3 w-3 animate-spin" />
+                          Restaurando...
+                        </>
+                      ) : (
+                        <>
+                          <Upload className="h-3 w-3" />
+                          Restaurar Usuarios
+                        </>
+                      )}
+                    </Button>
                   </div>
-                </Button>
+                </div>
+                <p className="text-xs text-emerald-700 mt-2">
+                  Solo información de usuarios
+                </p>
+              </div>
+            </div>
+
+            {/* Herramientas Administrativas */}
+            <div className="p-6 space-y-4">
+              <h3 className="font-semibold text-gray-800 flex items-center gap-2">
+                <Settings className="h-4 w-4 text-orange-600" />
+                Herramientas
+              </h3>
+              <div className="space-y-2">
                 <Button 
                   variant="outline" 
-                  className="w-full justify-start h-12 bg-gradient-to-r from-gray-50 to-gray-100 hover:from-gray-100 hover:to-gray-200 border-gray-300" 
+                  size="sm"
+                  className="w-full justify-start h-10 bg-gradient-to-r from-emerald-50 to-green-50 hover:from-emerald-100 hover:to-green-100 border-emerald-200 text-emerald-800" 
                   onClick={handleNotificationTest}
                 >
-                  <Bell className="mr-3 h-5 w-5 text-green-600" />
+                  <Bell className="mr-2 h-4 w-4 text-emerald-600" />
                   <div className="text-left">
-                    <div className="font-medium">Probar Notificaciones</div>
-                    <div className="text-xs text-gray-500">Verificar sistema de alertas</div>
+                    <div className="font-medium text-xs">Probar Notificaciones</div>
+                    <div className="text-xs text-emerald-600">Sistema de alertas</div>
                   </div>
                 </Button>
+                
                 <Button 
                   variant="outline" 
-                  className="w-full justify-start h-12 bg-gradient-to-r from-gray-50 to-gray-100 hover:from-gray-100 hover:to-gray-200 border-gray-300" 
+                  size="sm"
+                  className="w-full justify-start h-10 bg-gradient-to-r from-purple-50 to-indigo-50 hover:from-purple-100 hover:to-indigo-100 border-purple-200 text-purple-800" 
                   onClick={handleExportReports}
                 >
-                  <Download className="mr-3 h-5 w-5 text-purple-600" />
+                  <FileText className="mr-2 h-4 w-4 text-purple-600" />
                   <div className="text-left">
-                    <div className="font-medium">Exportar Reportes</div>
-                    <div className="text-xs text-gray-500">Descargar datos del sistema</div>
+                    <div className="font-medium text-xs">Exportar Reportes</div>
+                    <div className="text-xs text-purple-600">Descargar datos</div>
                   </div>
                 </Button>
+                
                 <Button 
                   variant="outline" 
-                  className="w-full justify-start h-12 bg-gradient-to-r from-gray-50 to-gray-100 hover:from-gray-100 hover:to-gray-200 border-gray-300" 
+                  size="sm"
+                  className="w-full justify-start h-10 bg-gradient-to-r from-orange-50 to-yellow-50 hover:from-orange-100 hover:to-yellow-100 border-orange-200 text-orange-800" 
                   onClick={handleClearLogs}
                 >
-                  <FileText className="mr-3 h-5 w-5 text-orange-600" />
+                  <Activity className="mr-2 h-4 w-4 text-orange-600" />
                   <div className="text-left">
-                    <div className="font-medium">Limpiar Logs del Sistema</div>
-                    <div className="text-xs text-gray-500">Liberar espacio en disco</div>
+                    <div className="font-medium text-xs">Limpiar Logs</div>
+                    <div className="text-xs text-orange-600">Liberar espacio</div>
                   </div>
                 </Button>
+                
                 <Button 
                   variant="outline" 
-                  className="w-full justify-start h-12 bg-gradient-to-r from-red-50 to-red-100 hover:from-red-100 hover:to-red-200 border-red-300" 
+                  size="sm"
+                  className="w-full justify-start h-10 bg-gradient-to-r from-red-50 to-red-100 hover:from-red-100 hover:to-red-200 border-red-300 text-red-800" 
                   onClick={() => setShowClearDatabaseModal(true)}
                 >
-                  <AlertTriangle className="mr-3 h-5 w-5 text-red-600" />
+                  <AlertTriangle className="mr-2 h-4 w-4 text-red-600" />
                   <div className="text-left">
-                    <div className="font-medium text-red-700">Limpiar Base de Datos</div>
-                    <div className="text-xs text-red-500">PELIGRO: Eliminar todos los datos</div>
+                    <div className="font-medium text-xs">Limpiar Base de Datos</div>
+                    <div className="text-xs text-red-600">⚠️ PELIGRO</div>
+                  </div>
+                </Button>
+
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleResetUserSequence}
+                  disabled={isResettingSequence}
+                  className="w-full justify-start h-10 bg-gradient-to-r from-blue-50 to-cyan-50 hover:from-blue-100 hover:to-cyan-100 border-blue-200 text-blue-800"
+                >
+                  <RotateCcw className="mr-2 h-4 w-4 text-blue-600" />
+                  <div className="text-left">
+                    <div className="font-medium text-xs">
+                      {isResettingSequence ? "Reiniciando..." : "Reiniciar IDs"}
+                    </div>
+                    <div className="text-xs text-blue-600">Secuencia de usuarios</div>
                   </div>
                 </Button>
               </div>
@@ -1021,6 +1266,118 @@ export default function AdminPage() {
                   className="bg-green-600 hover:bg-green-700"
                 >
                   {restoreUsersMutation.isPending ? "Restaurando..." : "Restaurar Usuarios"}
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Modal de confirmación de respaldo completo */}
+        <Dialog open={showSystemBackupModal} onOpenChange={setShowSystemBackupModal}>
+          <DialogContent className="max-w-lg">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2 text-blue-800">
+                <Database className="h-5 w-5" />
+                Respaldo Completo del Sistema
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="p-4 border border-blue-200 bg-blue-50 rounded-lg">
+                <p className="text-blue-800 font-semibold mb-2">🔒 Respaldo Completo</p>
+                <p className="text-blue-700 text-sm mb-2">
+                  Esta acción creará un respaldo completo de toda la base de datos incluyendo:
+                </p>
+                <ul className="text-blue-700 text-sm list-disc list-inside space-y-1">
+                  <li>Todos los usuarios y configuraciones</li>
+                  <li>Todos los pedidos y su historial</li>
+                  <li>Todas las reposiciones y transferencias</li>
+                  <li>Todos los documentos y notificaciones</li>
+                  <li>Eventos de agenda y timers</li>
+                  <li>Configuraciones administrativas</li>
+                </ul>
+                <p className="text-blue-800 font-bold text-sm mt-2">
+                  El archivo será descargado automáticamente
+                </p>
+              </div>
+
+              <div className="flex justify-end gap-2">
+                <Button 
+                  variant="outline" 
+                  onClick={() => setShowSystemBackupModal(false)}
+                >
+                  Cancelar
+                </Button>
+                <Button 
+                  onClick={handleConfirmBackupSystem}
+                  disabled={backupCompleteSystemMutation.isPending}
+                  className="bg-blue-600 hover:bg-blue-700"
+                >
+                  {backupCompleteSystemMutation.isPending ? "Creando Respaldo..." : "Crear Respaldo Completo"}
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Modal de restauración completa del sistema */}
+        <Dialog open={showSystemRestoreModal} onOpenChange={(open) => {
+          setShowSystemRestoreModal(open);
+          if (!open) {
+            setSystemRestoreFile(null);
+          }
+        }}>
+          <DialogContent className="max-w-lg">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2 text-purple-800">
+                <Upload className="h-5 w-5" />
+                Restaurar Sistema Completo
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="p-4 border border-red-200 bg-red-50 rounded-lg">
+                <p className="text-red-800 font-semibold mb-2">⚠️ ADVERTENCIA CRÍTICA</p>
+                <p className="text-red-700 text-sm mb-2">
+                  Esta acción restaurará COMPLETAMENTE el sistema desde un respaldo, esto puede:
+                </p>
+                <ul className="text-red-700 text-sm list-disc list-inside space-y-1">
+                  <li>Duplicar datos si ya existen</li>
+                  <li>Restaurar información eliminada previamente</li>
+                  <li>Afectar el funcionamiento del sistema</li>
+                  <li>Tomar varios minutos en completarse</li>
+                </ul>
+                <p className="text-red-800 font-bold text-sm mt-2">
+                  Use solo respaldos generados por este mismo sistema
+                </p>
+              </div>
+
+              <div>
+                <Label className="text-gray-700 font-medium">
+                  Seleccionar archivo de respaldo completo (.json)
+                </Label>
+                <Input 
+                  type="file"
+                  accept=".json,application/json"
+                  onChange={(e) => setSystemRestoreFile(e.target.files?.[0] || null)}
+                  className="mt-2"
+                />
+              </div>
+
+              <div className="flex justify-end gap-2">
+                <Button 
+                  variant="outline" 
+                  onClick={() => {
+                    setShowSystemRestoreModal(false);
+                    setSystemRestoreFile(null);
+                  }}
+                >
+                  Cancelar
+                </Button>
+                <Button 
+                  onClick={handleRestoreSystem}
+                  disabled={restoreCompleteSystemMutation.isPending || !systemRestoreFile}
+                  className="bg-purple-600 hover:bg-purple-700"
+                >
+                  {restoreCompleteSystemMutation.isPending ? "Restaurando Sistema..." : "RESTAURAR SISTEMA COMPLETO"}
                 </Button>
               </div>
             </div>

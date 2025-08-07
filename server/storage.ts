@@ -1,9 +1,9 @@
-import { 
-  users, 
-  orders, 
+import {
+  users,
+  orders,
   orderPieces,
-  transfers, 
-  orderHistory, 
+  transfers,
+  orderHistory,
   notifications,
   repositions,
   repositionPieces,
@@ -15,7 +15,7 @@ import {
   adminPasswords,
   agendaEvents,
   documents,
-  type User, 
+  type User,
   type InsertUser,
   type Order,
   type InsertOrder,
@@ -172,8 +172,8 @@ export interface IStorage {
     status: 'pendiente' | 'completado' | 'cancelado';
   }): Promise<any>;
   updateAgendaEvent(
-    eventId: number, 
-    userId: number, 
+    eventId: number,
+    userId: number,
     eventData: {
       title: string;
       description: string;
@@ -216,6 +216,10 @@ export interface IStorage {
   updateReposition(repositionId: number, data: any, pieces: any[], userId: number): Promise<any>;
   getRepositionProducts(repositionId: number): Promise<any[]>;
    reactivateReposition(repositionId: number, userId: number, reason: string): Promise<void>;
+
+   // Backup and Restore methods
+   async backupCompleteSystem(): Promise<any>;
+   async restoreCompleteSystem(backupData: any): Promise<any>;
 }
 
 export interface LocalRepositionTimer {
@@ -246,9 +250,9 @@ export class DatabaseStorage implements IStorage {
   sessionStore: session.Store;
 
   constructor() {
-    this.sessionStore = new PostgresSessionStore({ 
-      pool, 
-      createTableIfMissing: true 
+    this.sessionStore = new PostgresSessionStore({
+      pool,
+      createTableIfMissing: true
     });
   }
 
@@ -335,7 +339,7 @@ export class DatabaseStorage implements IStorage {
 
   async completeOrder(orderId: number, completedBy: number): Promise<void> {
     await db.update(orders)
-      .set({ 
+      .set({
         status: 'completed',
         completedAt: new Date()
       })
@@ -372,7 +376,7 @@ export class DatabaseStorage implements IStorage {
     }
 
     await db.update(orders)
-      .set({ 
+      .set({
         status: 'paused',
         updatedAt: new Date()
       })
@@ -537,9 +541,9 @@ export class DatabaseStorage implements IStorage {
     if (toAreaPieces.length > 0) {
       const newPieces = toAreaPieces[0].pieces + transfer.pieces;
       await db.update(orderPieces)
-        .set({ 
-          pieces: newPieces, 
-          updatedAt: new Date() 
+        .set({
+          pieces: newPieces,
+          updatedAt: new Date()
         })
         .where(and(
           eq(orderPieces.orderId, transfer.orderId),
@@ -648,9 +652,9 @@ export class DatabaseStorage implements IStorage {
   }
 
   async addOrderHistory(
-    orderId: number, 
-    action: string, 
-    description: string, 
+    orderId: number,
+    action: string,
+    description: string,
     userId: number,
     options?: {
       fromArea?: Area;
@@ -797,7 +801,7 @@ export class DatabaseStorage implements IStorage {
     let whereCondition;
 
     // Solo admin y envíos pueden ver reposiciones canceladas
-    const excludeStatuses = area === 'admin' || area === 'envios' 
+    const excludeStatuses = area === 'admin' || area === 'envios'
       ? [ne(repositions.status, 'eliminado' as RepositionStatus)]
       : [
           ne(repositions.status, 'eliminado' as RepositionStatus),
@@ -936,7 +940,7 @@ export class DatabaseStorage implements IStorage {
         .where(eq(repositions.id, transfer.repositionId));
     }
 
-    const historyDescription = action === 'accepted' 
+    const historyDescription = action === 'accepted'
       ? `Transfer ${action} from ${transfer.fromArea} to ${transfer.toArea}`
       : `Transfer ${action} from ${transfer.fromArea} to ${transfer.toArea}${reason ? ` - Motivo: ${reason}` : ''}`;
 
@@ -1128,7 +1132,7 @@ async completeReposition(repositionId: number, userId: number, notes?: string): 
     });
 
     await db.update(repositions)
-      .set({ 
+      .set({
         status: 'completado' as RepositionStatus,
         completedAt: now,
         approvedBy: userId
@@ -1287,7 +1291,7 @@ async getRepositionTracking(repositionId: number): Promise<any> {
     const areaOrder = ['patronaje', 'corte', 'bordado', 'ensamble', 'plancha', 'calidad'];
     const sortedAreas = allRelevantAreas.sort((a, b) => {
       const indexA = areaOrder.indexOf(a);
-      const indexB = areaOrder.indexOf(b);
+      const indexB = areaArea.indexOf(b);
       return indexA - indexB;
     });
 
@@ -1341,8 +1345,8 @@ async getRepositionTracking(repositionId: number): Promise<any> {
       }
 
       // Buscar el evento de historia más reciente para esta área
-      const areaHistory = history.find(h => 
-        h.toArea === area || 
+      const areaHistory = history.find(h =>
+        h.toArea === area ||
         (area === 'patronaje' && h.action === 'created') ||
         h.action === 'manual_time_set' && h.description?.includes(area)
       );
@@ -1418,8 +1422,8 @@ async getRepositionTracking(repositionId: number): Promise<any> {
     const totalMinutesCalculated = validTimes.reduce((sum, minutes) => sum + minutes, 0);
     const totalHours = Math.floor(totalMinutesCalculated / 60);
     const remainingMinutes = Math.round(totalMinutesCalculated % 60);
-    const totalTimeFormatted = totalMinutesCalculated > 0 ? 
-      (totalHours > 0 ? `${totalHours}h ${remainingMinutes}m` : `${remainingMinutes}m`) : 
+    const totalTimeFormatted = totalMinutesCalculated > 0 ?
+      (totalHours > 0 ? `${totalHours}h ${remainingMinutes}m` : `${remainingMinutes}m`) :
       "0m";
 
     // Calcular progreso basado en áreas completadas vs áreas relevantes
@@ -1627,7 +1631,7 @@ async getRepositionTracking(repositionId: number): Promise<any> {
     const [event] = await db.update(agendaEvents)
       .set({ status, updatedAt: new Date() })
       .where(and(
-        eq(agendaEvents.id, eventId), 
+        eq(agendaEvents.id, eventId),
         eq(agendaEvents.assignedToArea, userArea)
       ))
       .returning();
@@ -1884,11 +1888,11 @@ async startRepositionTimer(repositionId: number, userId: number, area: string): 
   }
 
   async setManualRepositionTime(
-    repositionId: number, 
-    area: string, 
-    userId: number, 
-    startTime: string, 
-    endTime: string, 
+    repositionId: number,
+    area: string,
+    userId: number,
+    startTime: string,
+    endTime: string,
     startDate: string,
     endDate: string
   ): Promise<any> {
@@ -2250,9 +2254,9 @@ async startRepositionTimer(repositionId: number, userId: number, area: string): 
   }
 
   async updateReposition(
-    repositionId: number, 
-    updateData: any, 
-    pieces: any[], 
+    repositionId: number,
+    updateData: any,
+    pieces: any[],
     userId: number
   ): Promise<any> {
     console.log('Updating reposition:', { repositionId, updateData, pieces: pieces.length });
@@ -2739,7 +2743,7 @@ async createReposition(data: InsertReposition & { folio: string, productos?: any
     }
   }
 
-  // Funciones de métricas
+  // Métricas
   async getMonthlyMetrics(month: number, year: number): Promise<any> {
     console.log(`Getting monthly metrics for ${month}/${year}`);
 
@@ -2800,7 +2804,7 @@ async createReposition(data: InsertReposition & { folio: string, productos?: any
         }
       });
 
-      // Calcular piezas por área usando un join directo sin contar repositions.id
+      // Calcular piezas por área usando un join directo sin contar repositions.id en el SELECT
       const byArea = await Promise.all(Array.from(areaMap.entries()).map(async ([area, data]) => {
         try {
           // Contar piezas directamente sin referencias a repositions.id en el SELECT
@@ -2997,8 +3001,8 @@ async createReposition(data: InsertReposition & { folio: string, productos?: any
 
     const totalRequestsWithRepositions = requestsMap.size;
     const allRepositionsCount = requestsQuery.reduce((sum, item) => sum + item.count, 0);
-    const averageRepositionsPerRequest = totalRequestsWithRepositions > 0 
-      ? Math.round(allRepositionsCount / totalRequestsWithRepositions * 100) / 100 
+    const averageRepositionsPerRequest = totalRequestsWithRepositions > 0
+      ? Math.round(allRepositionsCount / totalRequestsWithRepositions * 100) / 100
       : 0;
 
     const mostProblematicRequest = topRequests[0]?.noSolicitud || 'N/A';
@@ -3266,9 +3270,9 @@ async createReposition(data: InsertReposition & { folio: string, productos?: any
   }
 
    async updateReposition(
-    repositionId: number, 
-    updateData: any, 
-    pieces: any[], 
+    repositionId: number,
+    updateData: any,
+    pieces: any[],
     userId: number
   ): Promise<any> {
     console.log('Updating reposition:', { repositionId, updateData, pieces: pieces.length });
@@ -3397,6 +3401,436 @@ async createReposition(data: InsertReposition & { folio: string, productos?: any
   async getRepositionProducts(repositionId: number): Promise<any[]> {
     return await db.select().from(repositionProducts)
       .where(eq(repositionProducts.repositionId, repositionId));
+  }
+
+   async backupCompleteSystem(): Promise<any> {
+    try {
+      console.log('Starting complete system backup...');
+
+      // Obtener todos los datos de todas las tablas
+      const [
+        allUsers,
+        allOrders,
+        allOrderPieces,
+        allTransfers,
+        allOrderHistory,
+        allNotifications,
+        allRepositions,
+        allRepositionPieces,
+        allRepositionProducts,
+        allRepositionTimers,
+        allRepositionTransfers,
+        allRepositionHistory,
+        allRepositionMaterials,
+        allAdminPasswords,
+        allAgendaEvents,
+        allDocuments
+      ] = await Promise.all([
+        db.select().from(users),
+        db.select().from(orders),
+        db.select().from(orderPieces),
+        db.select().from(transfers),
+        db.select().from(orderHistory),
+        db.select().from(notifications),
+        db.select().from(repositions),
+        db.select().from(repositionPieces),
+        db.select().from(repositionProducts),
+        db.select().from(repositionTimers),
+        db.select().from(repositionTransfers),
+        db.select().from(repositionHistory),
+        db.select().from(repositionMaterials),
+        db.select().from(adminPasswords),
+        db.select().from(agendaEvents),
+        db.select().from(documents)
+      ]);
+
+      const backup = {
+        version: "1.0",
+        timestamp: new Date().toISOString(),
+        system: "JASANA",
+        tables: {
+          users: allUsers,
+          orders: allOrders,
+          orderPieces: allOrderPieces,
+          transfers: allTransfers,
+          orderHistory: allOrderHistory,
+          notifications: allNotifications,
+          repositions: allRepositions,
+          repositionPieces: allRepositionPieces,
+          repositionProducts: allRepositionProducts,
+          repositionTimers: allRepositionTimers,
+          repositionTransfers: allRepositionTransfers,
+          repositionHistory: allRepositionHistory,
+          repositionMaterials: allRepositionMaterials,
+          adminPasswords: allAdminPasswords,
+          agendaEvents: allAgendaEvents,
+          documents: allDocuments
+        },
+        stats: {
+          totalUsers: allUsers.length,
+          totalOrders: allOrders.length,
+          totalRepositions: allRepositions.length,
+          totalTransfers: allTransfers.length,
+          totalDocuments: allDocuments.length
+        }
+      };
+
+      console.log('Complete system backup created successfully');
+      return backup;
+    } catch (error) {
+      console.error('Backup complete system error:', error);
+      throw new Error('Error al crear respaldo completo del sistema: ' + error.message);
+    }
+  }
+
+  async restoreCompleteSystem(backupData: any): Promise<any> {
+    console.log('Starting complete system restore...');
+
+    try {
+      // Validar formato de respaldo
+      if (!backupData || typeof backupData !== 'object') {
+        throw new Error('Formato de respaldo inválido - no es un objeto válido');
+      }
+
+      console.log('Backup data keys:', Object.keys(backupData));
+
+      // Detectar el tipo de respaldo
+      const isUserBackup = backupData.users && Array.isArray(backupData.users) && !backupData.tables;
+      const isSystemBackup = backupData.tables && typeof backupData.tables === 'object';
+
+      if (!isUserBackup && !isSystemBackup) {
+        throw new Error(`Formato de respaldo inválido - debe ser un respaldo de usuarios o del sistema completo. Propiedades encontradas: ${Object.keys(backupData).join(', ')}`);
+      }
+
+      // Si es un respaldo de usuarios, convertirlo al formato de sistema
+      if (isUserBackup) {
+        console.log('Detectado respaldo de usuarios, convirtiendo a formato de sistema...');
+        const originalUsers = backupData.users;
+        backupData = {
+          version: backupData.version || "1.0",
+          timestamp: backupData.timestamp || new Date().toISOString(),
+          system: "JASANA",
+          tables: {
+            users: originalUsers
+          }
+        };
+        console.log('Respaldo convertido exitosamente con', originalUsers.length, 'usuarios');
+      }
+
+      // Validar que las propiedades que existen sean arrays
+      if (backupData.tables) {
+        const mainProperties = ['users', 'orders', 'repositions', 'transfers', 'notifications'];
+        for (const prop of mainProperties) {
+          if (backupData.tables.hasOwnProperty(prop) && !Array.isArray(backupData.tables[prop])) {
+            throw new Error(`Formato de respaldo inválido - tables.${prop} debe ser un array`);
+          }
+        }
+      }
+
+      let restored = {
+        users: 0,
+        orders: 0,
+        repositions: 0,
+        transfers: 0,
+        notifications: 0,
+        documents: 0,
+        agendaEvents: 0,
+        errors: 0
+      };
+
+      // Restaurar en orden dependiente de las relaciones
+
+      // 1. Usuarios primero (sin dependencias)
+      if (backupData.tables.users && Array.isArray(backupData.tables.users)) {
+        console.log(`Restaurando ${backupData.tables.users.length} usuarios...`);
+        for (const userData of backupData.tables.users) {
+          try {
+            const existingUser = await this.getUserByUsername(userData.username);
+            if (!existingUser) {
+              await db.insert(users).values({
+                ...userData,
+                createdAt: userData.createdAt ? new Date(userData.createdAt) : new Date()
+              });
+              restored.users++;
+              console.log(`Usuario ${userData.username} restaurado exitosamente`);
+            } else {
+              console.log(`Usuario ${userData.username} ya existe, omitiendo`);
+            }
+          } catch (error) {
+            console.error(`Error restoring user ${userData.username}:`, error);
+            restored.errors++;
+          }
+        }
+        console.log(`Usuarios procesados: ${restored.users} creados`);
+      }
+
+      // 2. Órdenes
+      if (backupData.tables.orders) {
+        for (const orderData of backupData.tables.orders) {
+          try {
+            const existingOrder = await db.select().from(orders).where(eq(orders.folio, orderData.folio)).limit(1);
+            if (existingOrder.length === 0) {
+              await db.insert(orders).values({
+                ...orderData,
+                createdAt: orderData.createdAt ? new Date(orderData.createdAt) : new Date(),
+                completedAt: orderData.completedAt ? new Date(orderData.completedAt) : null
+              });
+              restored.orders++;
+            }
+          } catch (error) {
+            console.error(`Error restoring order ${orderData.folio}:`, error);
+            restored.errors++;
+          }
+        }
+      }
+
+      // 3. Reposiciones
+      if (backupData.tables.repositions && Array.isArray(backupData.tables.repositions)) {
+        console.log(`Restaurando ${backupData.tables.repositions.length} reposiciones...`);
+        for (const repositionData of backupData.tables.repositions) {
+          try {
+            const existingReposition = await db.select().from(repositions).where(eq(repositions.folio, repositionData.folio)).limit(1);
+            if (existingReposition.length === 0) {
+              await db.insert(repositions).values({
+                ...repositionData,
+                createdAt: repositionData.createdAt ? new Date(repositionData.createdAt) : new Date(),
+                completedAt: repositionData.completedAt ? new Date(repositionData.completedAt) : null
+              });
+              restored.repositions++;
+            } else {
+              console.log(`Reposición ${repositionData.folio} ya existe, omitiendo`);
+            }
+          } catch (error) {
+            console.error(`Error restoring reposition ${repositionData.folio}:`, error);
+            restored.errors++;
+          }
+        }
+        console.log(`Reposiciones procesadas: ${restored.repositions} creadas`);
+      }
+
+      // 4. Piezas de órdenes
+      if (backupData.tables.orderPieces) {
+        for (const pieceData of backupData.tables.orderPieces) {
+          try {
+            await db.insert(orderPieces).values({
+              ...pieceData,
+              updatedAt: pieceData.updatedAt ? new Date(pieceData.updatedAt) : new Date()
+            }).onConflictDoNothing();
+          } catch (error) {
+            console.error(`Error restoring order piece:`, error);
+            restored.errors++;
+          }
+        }
+      }
+
+      // 5. Piezas de reposiciones
+      if (backupData.tables.repositionPieces) {
+        for (const pieceData of backupData.tables.repositionPieces) {
+          try {
+            await db.insert(repositionPieces).values(pieceData).onConflictDoNothing();
+          } catch (error) {
+            console.error(`Error restoring reposition piece:`, error);
+            restored.errors++;
+          }
+        }
+      }
+
+      // 6. Productos de reposiciones
+      if (backupData.tables.repositionProducts) {
+        for (const productData of backupData.tables.repositionProducts) {
+          try {
+            await db.insert(repositionProducts).values(productData).onConflictDoNothing();
+          } catch (error) {
+            console.error(`Error restoring reposition product:`, error);
+            restored.errors++;
+          }
+        }
+      }
+
+      // 7. Transferencias
+      if (backupData.tables.transfers) {
+        for (const transferData of backupData.tables.transfers) {
+          try {
+            await db.insert(transfers).values({
+              ...transferData,
+              createdAt: transferData.createdAt ? new Date(transferData.createdAt) : new Date(),
+              processedAt: transferData.processedAt ? new Date(transferData.processedAt) : null
+            }).onConflictDoNothing();
+            restored.transfers++;
+          } catch (error) {
+            console.error(`Error restoring transfer:`, error);
+            restored.errors++;
+          }
+        }
+      }
+
+      // 8. Transferencias de reposiciones
+      if (backupData.tables.repositionTransfers) {
+        for (const transferData of backupData.tables.repositionTransfers) {
+          try {
+            await db.insert(repositionTransfers).values({
+              ...transferData,
+              createdAt: transferData.createdAt ? new Date(transferData.createdAt) : new Date(),
+              processedAt: transferData.processedAt ? new Date(transferData.processedAt) : null
+            }).onConflictDoNothing();
+          } catch (error) {
+            console.error(`Error restoring reposition transfer:`, error);
+            restored.errors++;
+          }
+        }
+      }
+
+      // 9. Historial
+      if (backupData.tables.orderHistory) {
+        for (const historyData of backupData.tables.orderHistory) {
+          try {
+            await db.insert(orderHistory).values({
+              ...historyData,
+              createdAt: historyData.createdAt ? new Date(historyData.createdAt) : new Date()
+            }).onConflictDoNothing();
+          } catch (error) {
+            console.error(`Error restoring order history:`, error);
+            restored.errors++;
+          }
+        }
+      }
+
+      if (backupData.tables.repositionHistory) {
+        for (const historyData of backupData.tables.repositionHistory) {
+          try {
+            await db.insert(repositionHistory).values({
+              ...historyData,
+              createdAt: historyData.createdAt ? new Date(historyData.createdAt) : new Date()
+            }).onConflictDoNothing();
+          } catch (error) {
+            console.error(`Error restoring reposition history:`, error);
+            restored.errors++;
+          }
+        }
+      }
+
+      // 10. Notificaciones
+      if (backupData.tables.notifications) {
+        for (const notificationData of backupData.tables.notifications) {
+          try {
+            await db.insert(notifications).values({
+              ...notificationData,
+              createdAt: notificationData.createdAt ? new Date(notificationData.createdAt) : new Date()
+            }).onConflictDoNothing();
+            restored.notifications++;
+          } catch (error) {
+            console.error(`Error restoring notification:`, error);
+            restored.errors++;
+          }
+        }
+      }
+
+      // 11. Documentos
+      if (backupData.tables.documents) {
+        for (const documentData of backupData.tables.documents) {
+          try {
+            await db.insert(documents).values({
+              ...documentData,
+              createdAt: documentData.createdAt ? new Date(documentData.createdAt) : new Date()
+            }).onConflictDoNothing();
+            restored.documents++;
+          } catch (error) {
+            console.error(`Error restoring document:`, error);
+            restored.errors++;
+          }
+        }
+      }
+
+      // 12. Eventos de agenda
+      if (backupData.tables.agendaEvents) {
+        for (const eventData of backupData.tables.agendaEvents) {
+          try {
+            await db.insert(agendaEvents).values({
+              ...eventData,
+              createdAt: eventData.createdAt ? new Date(eventData.createdAt) : new Date(),
+              updatedAt: eventData.updatedAt ? new Date(eventData.updatedAt) : new Date()
+            }).onConflictDoNothing();
+            restored.agendaEvents++;
+          } catch (error) {
+            console.error(`Error restoring agenda event:`, error);
+            restored.errors++;
+          }
+        }
+      }
+
+      // 13. Timers de reposiciones
+      if (backupData.tables.repositionTimers) {
+        for (const timerData of backupData.tables.repositionTimers) {
+          try {
+            await db.insert(repositionTimers).values({
+              ...timerData,
+              createdAt: timerData.createdAt ? new Date(timerData.createdAt) : new Date(),
+              startTime: timerData.startTime ? new Date(timerData.startTime) : null,
+              endTime: timerData.endTime ? new Date(timerData.endTime) : null
+            }).onConflictDoNothing();
+          } catch (error) {
+            console.error(`Error restoring reposition timer:`, error);
+            restored.errors++;
+          }
+        }
+      }
+
+      // 14. Materiales de reposiciones
+      if (backupData.tables.repositionMaterials) {
+        for (const materialData of backupData.tables.repositionMaterials) {
+          try {
+            await db.insert(repositionMaterials).values(materialData).onConflictDoNothing();
+          } catch (error) {
+            console.error(`Error restoring reposition material:`, error);
+            restored.errors++;
+          }
+        }
+      }
+
+      // 15. Contraseñas de admin
+      if (backupData.tables.adminPasswords) {
+        for (const passwordData of backupData.tables.adminPasswords) {
+          try {
+            await db.insert(adminPasswords).values({
+              ...passwordData,
+              createdAt: passwordData.createdAt ? new Date(passwordData.createdAt) : new Date()
+            }).onConflictDoNothing();
+          } catch (error) {
+            console.error(`Error restoring admin password:`, error);
+            restored.errors++;
+          }
+        }
+      }
+
+      console.log('Complete system restore completed');
+
+      const totalRestored = Object.values(restored).reduce((sum: number, val: number) => 
+        typeof val === 'number' ? sum + val : sum, 0
+      );
+
+      return {
+        message: `Restauración del sistema completada: ${totalRestored} elementos restaurados total`,
+        restored,
+        summary: {
+          totalRestored,
+          hasErrors: restored.errors > 0
+        },
+        backupInfo: {
+          version: backupData.version,
+          timestamp: backupData.timestamp,
+          originalStats: backupData.stats
+        }
+      };
+    } catch (error) {
+      console.error('Restore complete system error:', error);
+
+      // Si ya es un error de validación, no lo anidemos
+      if (error.message.includes('Formato de respaldo inválido')) {
+        throw error;
+      }
+
+      throw new Error(`Error al restaurar el sistema completo: ${error.message}`);
+    }
   }
 }
 

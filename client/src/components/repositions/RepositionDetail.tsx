@@ -5,10 +5,12 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { FileUpload } from '@/components/ui/file-upload';
-import { X, Clock, User, Package, FileText, Upload, Download, Printer, Activity } from 'lucide-react';
+import { X, Clock, User, Package, FileText, Upload, Download, Printer, Activity, Edit } from 'lucide-react';
 import { RepositionPrintSummary } from './RepositionPrintSummary';
+import { RepositionForm } from './RepositionForm';
 import Swal from 'sweetalert2';
 import { HistoryTimeline } from "@/components/shared/HistoryTimeline";
+import { useAuth } from '@/hooks/use-auth';
 
 interface RepositionDetail {
   id: number;
@@ -80,8 +82,10 @@ export function RepositionDetail({
   onClose: () => void; 
 }) {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
   const [showUpload, setShowUpload] = useState(false);
   const [showPrintSummary, setShowPrintSummary] = useState(false);
+  const [showEditForm, setShowEditForm] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
 
   const { data: reposition, isLoading } = useQuery({
@@ -298,6 +302,20 @@ export function RepositionDetail({
                   <Activity className="w-4 h-4 mr-2" />
                   Actualizar
                 </Button>
+                
+                {/* Botón de Editar para áreas de envíos y admin */}
+                {(user?.area === 'envios' || user?.area === 'admin') && (
+                  <Button 
+                    onClick={() => setShowEditForm(true)}
+                    variant="outline"
+                    size="sm"
+                    className="text-orange-600 border-orange-600 hover:bg-orange-50"
+                  >
+                    <Edit className="w-4 h-4 mr-2" />
+                    Editar
+                  </Button>
+                )}
+
                 <Button 
                   onClick={() => setShowPrintSummary(true)}
                   className="bg-blue-600 hover:bg-blue-700"
@@ -835,6 +853,20 @@ export function RepositionDetail({
         <RepositionPrintSummary
           repositionId={repositionId}
           onClose={() => setShowPrintSummary(false)}
+        />
+      )}
+
+      {/* Formulario de edición */}
+      {showEditForm && (
+        <RepositionForm
+          repositionId={repositionId}
+          onClose={() => {
+            setShowEditForm(false);
+            // Refrescar datos después de editar
+            queryClient.invalidateQueries({ queryKey: ['reposition', repositionId] });
+            queryClient.invalidateQueries({ queryKey: ['reposition-pieces', repositionId] });
+            queryClient.invalidateQueries({ queryKey: ['reposition-products', repositionId] });
+          }}
         />
       )}
     </div>

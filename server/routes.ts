@@ -669,6 +669,64 @@ function registerAdminRoutes(app: Express) {
     }
   });
 
+  router.get("/backup-complete-system", async (req, res) => {
+    try {
+      const backup = await storage.backupCompleteSystem();
+      res.setHeader('Content-Type', 'application/json');
+      res.setHeader('Content-Disposition', `attachment; filename="backup-completo-jasana-${new Date().toISOString().split('T')[0]}.json"`);
+      res.json(backup);
+    } catch (error) {
+      console.error('Backup complete system error:', error);
+      res.status(500).json({ message: "Error al generar respaldo completo del sistema" });
+    }
+  });
+
+  router.post("/restore-complete-system", uploadBackup.single('backup'), handleMulterError, async (req, res) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ message: "No se proporcionó archivo de respaldo" });
+      }
+
+      console.log('Archivo recibido:', req.file.originalname, 'Tamaño:', req.file.size);
+
+      let backupContent;
+      let backupData;
+
+      try {
+        backupContent = req.file.buffer.toString('utf-8');
+        console.log('Contenido leído, primeros 200 caracteres:', backupContent.substring(0, 200));
+      } catch (error) {
+        return res.status(400).json({ message: "Error al leer el archivo de respaldo" });
+      }
+
+      try {
+        backupData = JSON.parse(backupContent);
+        console.log('JSON parseado exitosamente');
+      } catch (error) {
+        return res.status(400).json({ message: "El archivo no contiene JSON válido" });
+      }
+
+      await storage.restoreCompleteSystem(backupData);
+
+      res.json({ 
+        message: "Sistema restaurado exitosamente",
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error("Error en restauración completa:", error);
+
+      // Determinar el código de estado basado en el tipo de error
+      let statusCode = 500;
+      if (error.message.includes('Formato de respaldo inválido')) {
+        statusCode = 400;
+      }
+
+      res.status(statusCode).json({ 
+        message: error.message || "Error al restaurar el sistema completo" 
+      });
+    }
+  });
+
   router.put("/users/:id", async (req, res) => {
     try {
       const userId = parseInt(req.params.id);
@@ -1135,12 +1193,16 @@ function registerRepositionRoutes(app: Express) {
         createdBy: existingReposition.createdBy 
       });
 
-      if (existingReposition.status !== 'rechazado') {
-        return res.status(400).json({ message: "Solo se pueden editar reposiciones rechazadas" });
-      }
+      // Permitir edición si es rechazado y el usuario es el creador, o si el usuario es de envíos/admin
+      const canEdit = (existingReposition.status === 'rechazado' && existingReposition.createdBy === user.id) ||
+                     (user.area === 'envios' || user.area === 'admin');
 
-      if (existingReposition.createdBy !== user.id) {
-        return res.status(403).json({ message: "Solo el creador puede editar esta reposición" });
+      if (!canEdit) {
+        if (existingReposition.status !== 'rechazado') {
+          return res.status(400).json({ message: "Solo se pueden editar reposiciones rechazadas o si eres de envíos/admin" });
+        } else {
+          return res.status(403).json({ message: "Solo el creador puede editar reposiciones rechazadas, o usuarios de envíos/admin pueden editar cualquier reposición" });
+        }
       }
 
       let repositionData;
@@ -1587,7 +1649,9 @@ function registerRepositionRoutes(app: Express) {
       console.error('Set manual time error:', error);
       res.status(400).json({ message: error instanceof Error ? error.message : "Error al registrar tiempo manual" });
     }
-  });router.get("/:id/timer", async (req, res) => {
+  });
+  
+  router.get("/:id/timer", async (req, res) => {
     if (!req.isAuthenticated()) return res.status(401).json({ message: "Autenticación requerida" });
 
     try {
@@ -1756,7 +1820,7 @@ function registerRepositionRoutes(app: Express) {
         try {
           const history = await storage.getRepositionHistory(reposition.id);
           const completedEntry = history.find(h => h.action === 'completed');
-          
+
           if (completedEntry) {
             await db.update(repositions)
               .set({ completedAt: new Date(completedEntry.createdAt) })
