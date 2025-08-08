@@ -1,4 +1,4 @@
-import { Switch, Route } from "wouter";
+import { Switch, Route, Redirect } from "wouter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { ThemeProvider } from "@/hooks/use-theme";
@@ -103,15 +103,24 @@ function AppContent() {
         <Route path="/auth" component={AuthPage} />
         <Route path="/maintenance" component={MaintenanceScreen} />
         <Route path="/">
-          {({ params }) => {
+          {() => {
             // Redirect root to dashboard if authenticated, otherwise to auth
-            if (isLoading) return null;
-            if (user) {
-              window.history.replaceState({}, '', '/dashboard');
-            } else {
-              window.history.replaceState({}, '', '/auth');
+            if (isLoading) {
+              return (
+                <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-purple-50 to-blue-50">
+                  <div className="text-center">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
+                    <div className="text-gray-600 font-medium">Cargando...</div>
+                  </div>
+                </div>
+              );
             }
-            return null;
+            
+            if (user) {
+              return <Redirect to="/dashboard" />;
+            } else {
+              return <Redirect to="/auth" />;
+            }
           }}
         </Route>
         <ProtectedRoute path="/dashboard" component={Dashboard} />

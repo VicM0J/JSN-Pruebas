@@ -827,6 +827,117 @@ function registerDashboardRoutes(app: Express) {
       res.status(500).json({ message: "Error al obtener actividad reciente" });
     }
   });
+
+  // Endpoint para estadísticas de reposiciones con manejo de errores mejorado
+  app.get("/api/dashboard/reposition-stats", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ 
+          message: "Autenticación requerida",
+          error: "UNAUTHORIZED"
+        });
+      }
+
+      const user = req.user!;
+      const repositions = await storage.getRepositions();
+      
+      // Filtrar reposiciones no eliminadas para cálculos generales
+      const activeRepositions = repositions.filter(r => r.status !== 'eliminado');
+      
+      // Obtener reposiciones del área del usuario basado en currentArea
+      let myAreaRepositions;
+      if (user.area === 'admin' || user.area === 'envios') {
+        // Admin y envíos ven todas las reposiciones activas pero no completadas en En Mi Área
+        myAreaRepositions = activeRepositions.filter(r => r.status !== 'completado');
+      } else if (user.area === 'operaciones') {
+        // Operaciones ve las reposiciones pendientes (necesitan su aprobación)
+        myAreaRepositions = activeRepositions.filter(r => r.status === 'pendiente');
+      } else if (user.area === 'diseño') {
+        // Diseño ve reposiciones aprobadas que pueden trabajar (no completadas)
+        myAreaRepositions = activeRepositions.filter(r => 
+          r.status === 'aprobado'
+        );
+      } else if (user.area === 'almacen') {
+        // Almacén ve todas las reposiciones aprobadas para gestión de inventario (no completadas)
+        myAreaRepositions = activeRepositions.filter(r => 
+          r.status === 'aprobado' || r.status === 'en_proceso' || r.status === 'pausado'
+        );
+      } else {
+        // Otras áreas productivas ven solo las que están actualmente en su área y no están completadas
+        myAreaRepositions = activeRepositions.filter(r => 
+          r.currentArea === user.area && r.status !== 'completado'
+        );
+      }
+
+      const pendingRepositions = activeRepositions.filter(r => r.status === 'pendiente');
+      const urgentRepositions = activeRepositions.filter(r => 
+        r.urgencia === 'urgente' && r.status !== 'completado'
+      );
+      const pausedRepositions = activeRepositions.filter(r => r.status === 'pausado');
+
+      // Mejorar el filtrado de completadas hoy usando completedAt si existe, sino updated_at
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const tomorrow = new Date(today);
+      tomorrow.setDate(today.getDate() + 1);
+      
+      const completedToday = activeRepositions.filter(r => {
+        if (r.status !== 'completado') return false;
+        
+        // Usar completedAt si existe, sino updated_at
+        const completionDate = r.completedAt ? new Date(r.completedAt) : 
+                              r.updated_at ? new Date(r.updated_at) : null;
+        
+        return completionDate && completionDate >= today && completionDate < tomorrow;
+      });
+
+      const thisWeekStart = new Date(today);
+      thisWeekStart.setDate(today.getDate() - today.getDay());
+      const completedThisWeek = activeRepositions.filter(r => {
+        if (r.status !== 'completado') return false;
+        
+        const completionDate = r.completedAt ? new Date(r.completedAt) : 
+                              r.updated_at ? new Date(r.updated_at) : null;
+        
+        return completionDate && completionDate >= thisWeekStart;
+      });
+
+      // Calcular tiempo promedio de procesamiento usando completedAt
+      const completedWithTime = activeRepositions.filter(r => 
+        r.status === 'completado' && r.created_at && (r.completedAt || r.updated_at)
+      );
+
+      let totalProcessingTime = 0;
+      if (completedWithTime.length > 0) {
+        totalProcessingTime = completedWithTime.reduce((sum, r) => {
+          const created = new Date(r.created_at!);
+          const completed = new Date(r.completedAt || r.updated_at!);
+          return sum + (completed.getTime() - created.getTime());
+        }, 0) / completedWithTime.length / (1000 * 60); // en minutos
+      }
+
+      console.log(`[STATS] User ${user.username} (${user.area}): myAreaRepositions=${myAreaRepositions.length}, completedToday=${completedToday.length}, total=${repositions.length}`);
+
+      const stats = {
+        activeRepositions: activeRepositions.filter(r => r.status !== 'completado').length,
+        myAreaRepositions: myAreaRepositions.length,
+        pendingRepositions: pendingRepositions.length,
+        completedToday: completedToday.length,
+        pausedRepositions: pausedRepositions.length,
+        urgentRepositions: urgentRepositions.length,
+        completedThisWeek: completedThisWeek.length,
+        totalProcessingTime: Math.round(totalProcessingTime)
+      };
+
+      res.json(stats);
+    } catch (error) {
+      console.error('Get reposition stats error:', error);
+      res.status(500).json({ 
+        message: "Error al obtener estadísticas de reposiciones",
+        error: "INTERNAL_ERROR"
+      });
+    }
+  });
 }
 
 function configureWebSocket(app: Express): Server {

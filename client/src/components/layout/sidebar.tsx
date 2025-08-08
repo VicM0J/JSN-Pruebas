@@ -50,8 +50,16 @@ export function CustomSidebar({ onShowNotifications, onCreateOrder, onCreateRepo
   const [location, setLocation] = useLocation();
   const { state, setOpen } = useSidebar();
 
-  const { data: pendingTransfers = [] } = useQuery<any[]>({
+  const { data: pendingTransfers = [] } = useQuery({
     queryKey: ["/api/transfers/pending"],
+    queryFn: async () => {
+      const response = await fetch("/api/transfers/pending", {
+        credentials: 'include'
+      });
+      if (!response.ok) throw new Error('Error al cargar transferencias pendientes');
+      const data = await response.json();
+      return Array.isArray(data) ? data : [];
+    },
     enabled: !!user,
     refetchInterval: 10000,
     refetchOnWindowFocus: true,
@@ -197,7 +205,7 @@ export function CustomSidebar({ onShowNotifications, onCreateOrder, onCreateRepo
                 >
                   <div className="flex items-center gap-2 w-full h-full px-3">
                     <Home className="h-4 w-4 transition-transform duration-200 group-hover:scale-110" />
-                    <span className="transition-colors duration-200 group-data-[collapsible=icon]:hidden">Tablero</span>
+                    <span className="transition-colors duration-200 group-data-[collapsible=icon]:hidden">Reposiciones</span>
                   </div>
                 </SidebarMenuButton>
               </SidebarMenuItem>
@@ -229,7 +237,7 @@ export function CustomSidebar({ onShowNotifications, onCreateOrder, onCreateRepo
                 </SidebarMenuButton>
               </SidebarMenuItem>
 
-              <SidebarMenuItem>
+              {/* <SidebarMenuItem>
                 <SidebarMenuButton 
                   onClick={(e) => {
                     e.preventDefault();
@@ -268,9 +276,9 @@ export function CustomSidebar({ onShowNotifications, onCreateOrder, onCreateRepo
                     )}
                   </div>
                 </SidebarMenuButton>
-              </SidebarMenuItem>
+              </SidebarMenuItem> */}
 
-              <SidebarMenuItem>
+               <SidebarMenuItem>
                 <SidebarMenuButton 
                   onClick={(e) => {
                     e.preventDefault();
@@ -295,7 +303,7 @@ export function CustomSidebar({ onShowNotifications, onCreateOrder, onCreateRepo
                     <span className="transition-colors duration-200 group-data-[collapsible=icon]:hidden">Historial</span>
                   </div>
                 </SidebarMenuButton>
-              </SidebarMenuItem>
+              </SidebarMenuItem> 
 
               <SidebarMenuItem>
                 <SidebarMenuButton 
