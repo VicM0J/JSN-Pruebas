@@ -55,7 +55,6 @@ const urgencyColors = {
 };
 
 const accidentFilters = [
-  { value: 'all', label: 'Todos los accidentes' },
   { value: 'falla_tela', label: 'Falla de tela' },
   { value: 'accidente_maquina', label: 'Accidente con máquina' },
   { value: 'accidente_operario', label: 'Accidente por operario' },
@@ -212,7 +211,7 @@ export function RepositionList({ userArea }: { userArea: string }) {
   const [showHistory, setShowHistory] = useState(false);
   const [includeDeleted, setIncludeDeleted] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  const [filterAccident, setFilterAccident] = useState<string>('all');
+  // Filtro de accidentes removido
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [urgencyFilter, setUrgencyFilter] = useState<string>('all');
   const [typeFilter, setTypeFilter] = useState<string>('all');
@@ -286,7 +285,18 @@ export function RepositionList({ userArea }: { userArea: string }) {
 
       // Para admin y envíos, cuando no están en modo historial, aplicar filtro por área si está seleccionado
       if ((userArea === 'admin' || userArea === 'envios') && !showHistory && filterArea && filterArea !== 'all') {
-        return data.filter((repo: any) => repo.currentArea === filterArea || repo.solicitanteArea === filterArea);
+        return data.filter((repo: any) => 
+          repo.currentArea === filterArea || 
+          repo.solicitanteArea === filterArea
+        );
+      }
+
+      // Para diseño y almacén con filtro por área específica
+      if ((userArea === 'diseño' || userArea === 'almacen') && filterArea && filterArea !== 'all') {
+        return data.filter((repo: any) => 
+          repo.currentArea === filterArea || 
+          repo.solicitanteArea === filterArea
+        );
       }
 
       // Filtrar reposiciones completadas, eliminadas y canceladas para usuarios que no son admin ni envíos
@@ -1104,8 +1114,7 @@ export function RepositionList({ userArea }: { userArea: string }) {
       reposition.solicitanteArea?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       reposition.currentArea?.toLowerCase().includes(searchTerm.toLowerCase());
 
-    const matchesAccident = filterAccident === 'all' || 
-      reposition.tipoAccidente?.toLowerCase().includes(filterAccident.replace('_', ' '));
+    // Filtro de accidentes removido según solicitud
 
     const matchesStatus = statusFilter === 'all' || reposition.status === statusFilter;
 
@@ -1136,7 +1145,7 @@ export function RepositionList({ userArea }: { userArea: string }) {
       }
     })();
 
-    return matchesSearch && matchesAccident && matchesStatus && matchesUrgency && matchesType && matchesDateRange;
+    return matchesSearch && matchesStatus && matchesUrgency && matchesType && matchesDateRange;
   });
 
   const getRepositionNextAreas = (currentArea: string) => {
@@ -1409,13 +1418,11 @@ export function RepositionList({ userArea }: { userArea: string }) {
               </SelectTrigger>
               <SelectContent className="bg-white dark:bg-slate-800 border-gray-300 dark:border-slate-700">
                 <SelectItem value="all" className="text-gray-900 dark:text-gray-100">Todos los estados</SelectItem>
-                <SelectItem value="pendiente" className="text-gray-900 dark:text-gray-100">Pendiente</SelectItem>
                 <SelectItem value="aprobado" className="text-gray-900 dark:text-gray-100">Aprobado</SelectItem>
                 <SelectItem value="rechazado" className="text-gray-900 dark:text-gray-100">Rechazado</SelectItem>
                 <SelectItem value="en_proceso" className="text-gray-900 dark:text-gray-100">En proceso</SelectItem>
                 <SelectItem value="completado" className="text-gray-900 dark:text-gray-100">Completado</SelectItem>
                 <SelectItem value="cancelado" className="text-gray-900 dark:text-gray-100">Cancelado</SelectItem>
-                <SelectItem value="eliminado" className="text-gray-900 dark:text-gray-100">Eliminado</SelectItem>
               </SelectContent>
             </Select>
 
@@ -1434,15 +1441,16 @@ export function RepositionList({ userArea }: { userArea: string }) {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
-            {/* Filtro por tipo de accidente */}
-            <Select value={filterAccident} onValueChange={setFilterAccident}>
+            {/* Filtro por áreas */}
+            <Select value={filterArea} onValueChange={setFilterArea}>
               <SelectTrigger className="bg-white dark:bg-slate-800 border-gray-300 dark:border-slate-600 text-gray-900 dark:text-gray-100">
-                <SelectValue placeholder="Tipo de accidente" />
+                <SelectValue placeholder="Todas las áreas" />
               </SelectTrigger>
               <SelectContent className="bg-white dark:bg-slate-800 border-gray-300 dark:border-slate-700">
-                {accidentFilters.map(filter => (
-                  <SelectItem key={filter.value} value={filter.value} className="text-gray-900 dark:text-gray-100">
-                    {filter.label}
+                <SelectItem value="all" className="text-gray-900 dark:text-gray-100">Todas las áreas</SelectItem>
+                {areas.map(area => (
+                  <SelectItem key={area} value={area} className="text-gray-900 dark:text-gray-100">
+                    {getAreaDisplayName(area)}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -1477,7 +1485,7 @@ export function RepositionList({ userArea }: { userArea: string }) {
 
           {/* Resumen de filtros activos */}
           <div className="flex flex-wrap gap-2 mt-4">
-            {(searchTerm || statusFilter !== 'all' || urgencyFilter !== 'all' || filterAccident !== 'all' || typeFilter !== 'all' || dateRangeFilter !== 'all') && (
+            {(searchTerm || statusFilter !== 'all' || urgencyFilter !== 'all' || typeFilter !== 'all' || dateRangeFilter !== 'all') && (
               <div className="flex items-center gap-2">
                 <span className="text-sm text-gray-600 dark:text-gray-400">Filtros activos:</span>
                 {searchTerm && (
@@ -1505,7 +1513,6 @@ export function RepositionList({ userArea }: { userArea: string }) {
                     setSearchTerm('');
                     setStatusFilter('all');
                     setUrgencyFilter('all');
-                    setFilterAccident('all');
                     setTypeFilter('all');
                     setDateRangeFilter('all');
                   }}
@@ -1519,47 +1526,7 @@ export function RepositionList({ userArea }: { userArea: string }) {
         </CardContent>
       </Card>
 
-        {(userArea === 'admin' || userArea === 'envios' || userArea === 'diseño' || userArea === 'almacen') && (
-          <>
-            <Select value={filterArea} onValueChange={setFilterArea}>
-              <SelectTrigger className="w-48 bg-white dark:bg-slate-800 border-gray-300 dark:border-slate-600 text-gray-900 dark:text-gray-100">
-                <SelectValue placeholder="Filtrar por área" />
-              </SelectTrigger>
-              <SelectContent className="bg-white dark:bg-slate-800 border-gray-300 dark:border-slate-700">
-                <SelectItem value="all" className="text-gray-900 dark:text-gray-100">{(userArea === 'diseño' || userArea === 'almacen') ? 'Todas las aprobadas' : 'Todas las áreas'}</SelectItem>
-                {areas.map(area => (
-                  <SelectItem key={area} value={area} className="text-gray-900 dark:text-gray-100">
-                    {area.charAt(0).toUpperCase() + area.slice(1)}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            {(userArea === 'admin' || userArea === 'envios') && (
-              <>
-                <div className="flex items-center space-x-2">
-                  <Switch
-                    id="show-history"
-                    checked={showHistory}
-                    onCheckedChange={setShowHistory}
-                  />
-                  <Label htmlFor="show-history">Ver historial completo</Label>
-                </div>
-
-                {showHistory && (
-                  <div className="flex items-center space-x-2">
-                    <Switch
-                      id="include-deleted"
-                      checked={includeDeleted}
-                      onCheckedChange={setIncludeDeleted}
-                    />
-                    <Label htmlFor="include-deleted">Incluir eliminadas</Label>
-                  </div>
-                )}
-              </>
-            )}
-          </>
-        )}
+        
 
 
       {pendingTransfers.length > 0 && (

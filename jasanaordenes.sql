@@ -4,7 +4,7 @@ BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'area') THEN
         CREATE TYPE area AS ENUM (
             'patronaje', 'corte', 'bordado', 'ensamble', 
-            'plancha', 'calidad', 'operaciones', 'admin', 'envios', 'almacen', 'diseño', 'sistemas'
+            'plancha', 'calidad', 'operaciones', 'admin', 'envios', 'almacen', 'diseño'
         );
     ELSE
         BEGIN
@@ -29,11 +29,6 @@ BEGIN
         END;
         BEGIN
             ALTER TYPE area ADD VALUE 'diseño';
-        EXCEPTION
-            WHEN duplicate_object THEN NULL;
-        END;
-        BEGIN
-            ALTER TYPE area ADD VALUE 'sistemas';
         EXCEPTION
             WHEN duplicate_object THEN NULL;
         END;
@@ -70,18 +65,6 @@ BEGIN
 
     IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'material_status') THEN
         CREATE TYPE material_status AS ENUM ('disponible', 'falta_parcial', 'no_disponible');
-    END IF;
-
-    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'ticket_status') THEN
-        CREATE TYPE ticket_status AS ENUM ('pendiente', 'aprobado', 'rechazado', 'finalizado', 'cancelado');
-    END IF;
-
-    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'ticket_priority') THEN
-        CREATE TYPE ticket_priority AS ENUM ('baja', 'media', 'alta', 'critica');
-    END IF;
-
-    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'ticket_category') THEN
-        CREATE TYPE ticket_category AS ENUM ('soporte_tecnico', 'solicitud_acceso', 'reporte_error', 'mejora_sistema', 'otro');
     END IF;
 END
 $$;
@@ -213,12 +196,6 @@ CREATE TABLE IF NOT EXISTS users (
 CREATE UNIQUE INDEX IF NOT EXISTS users_username_unique ON users(username);
 CREATE UNIQUE INDEX IF NOT EXISTS users_pkey ON users(id);
 
--- Insertar usuarios por defecto
-INSERT INTO users (username, password, name, area) VALUES 
-    ('admin', '$scrypt$N=32768,r=8,p=1,maxmem=67108864$8a3c9b4d2e1f7a6b5c8d9e0f3a4b7c8d$1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b', 'Administrador', 'admin'),
-    ('sistemas', '$scrypt$N=32768,r=8,p=1,maxmem=67108864$8a3c9b4d2e1f7a6b5c8d9e0f3a4b7c8d$1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b', 'Usuario Sistemas', 'sistemas')
-ON CONFLICT (username) DO NOTHING;
-
 -- Tabla de órdenes
 CREATE TABLE IF NOT EXISTS orders (
     id SERIAL PRIMARY KEY,
@@ -347,7 +324,7 @@ BEGIN
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'repositions' AND column_name = 'materiales_implicados') THEN
         ALTER TABLE repositions ADD COLUMN materiales_implicados TEXT;
     END IF;
-
+    
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'repositions' AND column_name = 'rejection_reason') THEN
         ALTER TABLE repositions ADD COLUMN rejection_reason TEXT;
     END IF;
@@ -430,15 +407,15 @@ BEGIN
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'reposition_timers' AND column_name = 'manual_start_time') THEN
         ALTER TABLE reposition_timers ADD COLUMN manual_start_time VARCHAR(5);
     END IF;
-
+    
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'reposition_timers' AND column_name = 'manual_end_time') THEN
         ALTER TABLE reposition_timers ADD COLUMN manual_end_time VARCHAR(5);
     END IF;
-
+    
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'reposition_timers' AND column_name = 'manual_date') THEN
         ALTER TABLE reposition_timers ADD COLUMN manual_date VARCHAR(10);
     END IF;
-
+    
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'reposition_timers' AND column_name = 'manual_end_date') THEN
         ALTER TABLE reposition_timers ADD COLUMN manual_end_date VARCHAR(10);
     END IF;
@@ -529,58 +506,4 @@ CREATE TABLE IF NOT EXISTS documents (
         FOREIGN KEY (reposition_id) REFERENCES repositions(id) ON DELETE CASCADE,
     CONSTRAINT documents_uploaded_by_fkey 
         FOREIGN KEY (uploaded_by) REFERENCES users(id)
-);
-
--- Tabla de tickets de soporte
-CREATE TABLE IF NOT EXISTS support_tickets (
-    id SERIAL PRIMARY KEY,
-    folio TEXT UNIQUE NOT NULL,
-    title TEXT NOT NULL,
-    description TEXT NOT NULL,
-    category ticket_category NOT NULL,
-    priority ticket_priority NOT NULL DEFAULT 'media',
-    status ticket_status NOT NULL DEFAULT 'pendiente',
-    created_by INTEGER NOT NULL,
-    assigned_to INTEGER,
-    resolved_by INTEGER,
-    created_at TIMESTAMP NOT NULL DEFAULT now(),
-    updated_at TIMESTAMP NOT NULL DEFAULT now(),
-    resolved_at TIMESTAMP,
-    resolution_notes TEXT,
-    CONSTRAINT support_tickets_created_by_fkey 
-        FOREIGN KEY (created_by) REFERENCES users(id),
-    CONSTRAINT support_tickets_assigned_to_fkey 
-        FOREIGN KEY (assigned_to) REFERENCES users(id),
-    CONSTRAINT support_tickets_resolved_by_fkey 
-        FOREIGN KEY (resolved_by) REFERENCES users(id)
-);
-
--- Historial de tickets
-CREATE TABLE IF NOT EXISTS ticket_history (
-    id SERIAL PRIMARY KEY,
-    ticket_id INTEGER NOT NULL,
-    action TEXT NOT NULL,
-    description TEXT NOT NULL,
-    old_status ticket_status,
-    new_status ticket_status,
-    user_id INTEGER NOT NULL,
-    created_at TIMESTAMP NOT NULL DEFAULT now(),
-    CONSTRAINT ticket_history_ticket_id_fkey 
-        FOREIGN KEY (ticket_id) REFERENCES support_tickets(id) ON DELETE CASCADE,
-    CONSTRAINT ticket_history_user_id_fkey 
-        FOREIGN KEY (user_id) REFERENCES users(id)
-);
-
--- Comentarios de tickets
-CREATE TABLE IF NOT EXISTS ticket_comments (
-    id SERIAL PRIMARY KEY,
-    ticket_id INTEGER NOT NULL,
-    user_id INTEGER NOT NULL,
-    comment TEXT NOT NULL,
-    is_internal BOOLEAN NOT NULL DEFAULT false,
-    created_at TIMESTAMP NOT NULL DEFAULT now(),
-    CONSTRAINT ticket_comments_ticket_id_fkey 
-        FOREIGN KEY (ticket_id) REFERENCES support_tickets(id) ON DELETE CASCADE,
-    CONSTRAINT ticket_comments_user_id_fkey 
-        FOREIGN KEY (user_id) REFERENCES users(id)
 );

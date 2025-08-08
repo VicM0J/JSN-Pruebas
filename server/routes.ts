@@ -7,9 +7,9 @@ import { storage } from "./storage";
 import { insertOrderSchema, insertTransferSchema, insertRepositionSchema, insertRepositionPieceSchema, insertRepositionTransferSchema, insertAdminPasswordSchema, type Area, type RepositionType, type RepositionStatus } from "@shared/schema";
 import { z } from "zod";
 import bcrypt from "bcrypt";
-import { eq, desc, and, or, ne, isNotNull, isNull, count, sql } from 'drizzle-orm';
+import { eq, desc, and, or, ne, isNotNull, isNull, count } from 'drizzle-orm';
 import { db } from './db';
-import { repositionTransfers, repositions, supportTickets, ticketHistory, users } from '@shared/schema';
+import { repositionTransfers, repositions } from '@shared/schema';
 import { authenticateToken } from './auth';
 import path from 'path';
 import fs from 'fs';
@@ -29,7 +29,6 @@ export function registerRoutes(app: Express): Server {
   registerAgendaRoutes(app);
   registerAlmacenRoutes(app);
   registerMetricsRoutes(app);
-  registerTicketsRoutes(app);
 
   const httpServer = configureWebSocket(app);
   return httpServer;
@@ -82,17 +81,17 @@ function registerOrderRoutes(app: Express) {
 
       if (missingFields.length > 0) {
         console.log('Missing required fields:', missingFields);
-        return res.status(400).json({
+        return res.status(400).json({ 
           message: `Faltan campos requeridos: ${missingFields.join(', ')}`,
-          missingFields
+          missingFields 
         });
       }
 
       // Validate totalPiezas is a valid number
       const totalPiezasValue = parseInt(String(req.body.totalPiezas));
       if (isNaN(totalPiezasValue) || totalPiezasValue <= 0) {
-        return res.status(400).json({
-          message: "El total de piezas debe ser un número mayor a 0"
+        return res.status(400).json({ 
+          message: "El total de piezas debe ser un número mayor a 0" 
         });
       }
 
@@ -161,10 +160,10 @@ function registerOrderRoutes(app: Express) {
       if (user.area === 'bordado') {
         console.log(`[BORDADO DEBUG] User ${user.username} from bordado area received ${orders.length} orders`);
         if (orders.length > 0) {
-          console.log(`[BORDADO DEBUG] Sample orders:`, orders.slice(0, 3).map(o => ({
+          console.log(`[BORDADO DEBUG] Sample orders:`, orders.slice(0, 3).map(o => ({ 
             id: o.id,
-            folio: o.folio,
-            currentArea: o.currentArea,
+            folio: o.folio, 
+            currentArea: o.currentArea, 
             status: o.status,
             clienteHotel: o.clienteHotel
           })));
@@ -392,15 +391,15 @@ function registerTransferRoutes(app: Express) {
       const userAreaPieces = orderPieces.find((p: any) => p.area === user.area);
 
       if (!userAreaPieces || userAreaPieces.pieces < pieces) {
-        return res.status(400).json({
-          message: `No hay suficientes piezas disponibles en ${user.area}. Disponibles: ${userAreaPieces?.pieces || 0}`
+        return res.status(400).json({ 
+          message: `No hay suficientes piezas disponibles en ${user.area}. Disponibles: ${userAreaPieces?.pieces || 0}` 
         });
       }
 
       // Verificar si hay una transferencia reciente pendiente
       const recentTransferCheck = await storage.hasRecentOrderTransfer(orderId, user.area);
       if (recentTransferCheck.hasRecent) {
-        return res.status(429).json({
+        return res.status(429).json({ 
           message: `Debes esperar ${recentTransferCheck.remainingTime} minuto(s) antes de poder transferir nuevamente. Hay una transferencia pendiente de procesamiento.`,
           remainingTime: recentTransferCheck.remainingTime
         });
@@ -709,7 +708,7 @@ function registerAdminRoutes(app: Express) {
 
       await storage.restoreCompleteSystem(backupData);
 
-      res.json({
+      res.json({ 
         message: "Sistema restaurado exitosamente",
         timestamp: new Date().toISOString()
       });
@@ -722,8 +721,8 @@ function registerAdminRoutes(app: Express) {
         statusCode = 400;
       }
 
-      res.status(statusCode).json({
-        message: error.message || "Error al restaurar el sistema completo"
+      res.status(statusCode).json({ 
+        message: error.message || "Error al restaurar el sistema completo" 
       });
     }
   });
@@ -980,7 +979,7 @@ function registerRepositionRoutes(app: Express) {
       else if (area && area !== 'all') {
         // Otras áreas con filtro específico
         repositions = await storage.getRepositionsByArea(area as Area, user.id);
-      }
+      } 
       else {
         // Otras áreas sin filtro (su área actual)
         repositions = await storage.getRepositionsByArea(user.area, user.id);
@@ -1060,7 +1059,7 @@ function registerRepositionRoutes(app: Express) {
       const recentTransferCheck = await storage.hasRecentTransfer(repositionId, user.area);
       if (recentTransferCheck.hasRecent) {
         console.log(`Transfer blocked for reposition ${repositionId} from area ${user.area}, remaining time: ${recentTransferCheck.remainingTime} minutes`);
-        return res.status(429).json({
+        return res.status(429).json({ 
           message: `⏱️ Debes esperar ${recentTransferCheck.remainingTime} minuto(s) antes de poder transferir nuevamente. Hay una transferencia pendiente de procesamiento desde tu área.`,
           remainingTime: recentTransferCheck.remainingTime,
           type: 'rate_limit'
@@ -1078,7 +1077,7 @@ function registerRepositionRoutes(app: Express) {
         const history = await storage.getRepositionHistory(repositionId);
 
         // Contar cuántas veces ha sido aceptada una transferencia hacia esta área
-        const transfersToCreatorArea = history.filter((entry: any) =>
+        const transfersToCreatorArea = history.filter((entry: any) => 
           entry.action === 'transfer_accepted' && entry.toArea === reposition.solicitanteArea
         ).length;
 
@@ -1092,7 +1091,7 @@ function registerRepositionRoutes(app: Express) {
       if (shouldRequireTime) {
         const timer = await storage.getRepositionTimer(repositionId, user.area);
         if (!timer || (!timer.manualStartTime && !timer.startTime)) {
-          return res.status(400).json({
+          return res.status(400).json({ 
             message: 'Debe registrar el tiempo de trabajo antes de transferir la reposición.',
             type: 'timer_required'
           });
@@ -1109,7 +1108,7 @@ function registerRepositionRoutes(app: Express) {
 
       if (existingPendingTransfers.length > 0) {
         console.log(`Found existing pending transfer for reposition ${repositionId} from area ${user.area}`);
-        return res.status(429).json({
+        return res.status(429).json({ 
           message: `Ya existe una transferencia pendiente desde tu área para esta reposición. Espera a que sea procesada antes de crear una nueva.`,
           type: 'pending_exists'
         });
@@ -1188,10 +1187,10 @@ function registerRepositionRoutes(app: Express) {
         return res.status(404).json({ message: "Reposición no encontrada" });
       }
 
-      console.log('Existing reposition:', {
-        id: existingReposition.id,
-        status: existingReposition.status,
-        createdBy: existingReposition.createdBy
+      console.log('Existing reposition:', { 
+        id: existingReposition.id, 
+        status: existingReposition.status, 
+        createdBy: existingReposition.createdBy 
       });
 
       // Permitir edición si es rechazado y el usuario es el creador, o si el usuario es de envíos/admin
@@ -1218,10 +1217,10 @@ function registerRepositionRoutes(app: Express) {
         return res.status(400).json({ message: "Datos de reposición inválidos" });
       }
 
-      console.log('Parsed reposition data:', {
-        type: repositionData.type,
+      console.log('Parsed reposition data:', { 
+        type: repositionData.type, 
         hasProductos: !!repositionData.productos,
-        hasPieces: !!repositionData.pieces
+        hasPieces: !!repositionData.pieces 
       });
 
       const { pieces, productos, telaContraste, ...mainData } = repositionData;
@@ -1237,12 +1236,12 @@ function registerRepositionRoutes(app: Express) {
       console.log('All pieces to update:', allPieces.length);
 
       const updatedReposition = await storage.updateReposition(
-        repositionId,
+        repositionId, 
         {
           ...mainData,
           productos,
-        },
-        allPieces,
+        }, 
+        allPieces, 
         user.id
       );
 
@@ -1443,9 +1442,9 @@ function registerRepositionRoutes(app: Express) {
       const notifications = await storage.getUserNotifications(user.id);
 
       // Filtrar solo notificaciones de reposiciones no leídas
-      const repositionNotifications = notifications.filter(n =>
+      const repositionNotifications = notifications.filter(n => 
         !n.read && (
-          n.type?.includes('reposition') ||
+          n.type?.includes('reposition') || 
           n.type?.includes('completion') ||
           n.type === 'new_reposition' ||
           n.type === 'reposition_transfer' ||
@@ -1480,9 +1479,9 @@ function registerRepositionRoutes(app: Express) {
 
       console.log('Pending repositions found:', pendingRepositions.length);
 
-      res.json({
+      res.json({ 
         count: pendingRepositions.length,
-        repositions: pendingRepositions
+        repositions: pendingRepositions 
       });
     } catch (error) {
       console.error('Get pending repositions count error:', error);
@@ -1549,7 +1548,7 @@ function registerRepositionRoutes(app: Express) {
         const history = await storage.getRepositionHistory(repositionId);
 
         // Contar cuántas veces ha sido aceptada una transferencia hacia esta área
-        const transfersToCreatorArea = history.filter((entry: any) =>
+        const transfersToCreatorArea = history.filter((entry: any) => 
           entry.action === 'transfer_accepted' && entry.toArea === reposition.solicitanteArea
         ).length;
 
@@ -1560,10 +1559,10 @@ function registerRepositionRoutes(app: Express) {
       }
 
       await storage.startRepositionTimer(repositionId, user.id, area);
-      res.json({
-        message: "Cronómetro iniciado correctamente",
+      res.json({ 
+        message: "Cronómetro iniciado correctamente", 
         repositionId,
-        area
+        area 
       });
     } catch (error) {
       console.error('Start timer error:', error);
@@ -1594,7 +1593,7 @@ function registerRepositionRoutes(app: Express) {
         const history = await storage.getRepositionHistory(repositionId);
 
         // Contar cuántas veces ha sido aceptada una transferencia hacia esta área
-        const transfersToCreatorArea = history.filter((entry: any) =>
+        const transfersToCreatorArea = history.filter((entry: any) => 
           entry.action === 'transfer_accepted' && entry.toArea === reposition.solicitanteArea
         ).length;
 
@@ -1749,9 +1748,9 @@ function registerRepositionRoutes(app: Express) {
         savedDocuments.push(document);
       }
 
-      res.json({
+      res.json({ 
         message: `${savedDocuments.length} documento(s) añadido(s) correctamente`,
-        documents: savedDocuments
+        documents: savedDocuments 
       });
     } catch (error) {
       console.error('Upload documents error:', error);
@@ -1836,7 +1835,7 @@ function registerRepositionRoutes(app: Express) {
         }
       }
 
-      res.json({
+      res.json({ 
         message: `Reparación completada: ${repaired} reposiciones reparadas, ${failed} fallaron`,
         repaired,
         failed,
@@ -2281,151 +2280,3 @@ function registerMetricsRoutes(app: Express) {
 }
 
 // Corrected timer validation logic in reposition routes to accurately determine when creator areas should register time.
-
-function registerTicketsRoutes(app: Express) {
-  const router = Router();
-
-  router.get("/", async (req, res) => {
-    if (!req.isAuthenticated()) return res.status(401).json({ message: "Autenticación requerida" });
-
-    try {
-      const { status } = req.query;
-
-      let query = db
-        .select({
-          id: supportTickets.id,
-          folio: supportTickets.folio,
-          title: supportTickets.title,
-          description: supportTickets.description,
-          category: supportTickets.category,
-          priority: supportTickets.priority,
-          status: supportTickets.status,
-          createdBy: supportTickets.createdBy,
-          assignedTo: supportTickets.assignedTo,
-          resolvedBy: supportTickets.resolvedBy,
-          createdAt: supportTickets.createdAt,
-          updatedAt: supportTickets.updatedAt,
-          resolvedAt: supportTickets.resolvedAt,
-          resolutionNotes: supportTickets.resolutionNotes,
-          createdByUser: {
-            id: users.id,
-            name: users.name,
-            area: users.area
-          }
-        })
-        .from(supportTickets)
-        .leftJoin(users, eq(supportTickets.createdBy, users.id))
-        .orderBy(desc(supportTickets.createdAt));
-
-      if (status && status !== 'all') {
-        query = query.where(eq(supportTickets.status, status as string));
-      }
-
-      const tickets = await query;
-      res.json(tickets);
-    } catch (error) {
-      console.error("Error al obtener tickets:", error);
-      res.status(500).json({ error: "Error interno del servidor" });
-    }
-  });
-
-  router.post("/", async (req, res) => {
-    if (!req.isAuthenticated()) return res.status(401).json({ message: "Autenticación requerida" });
-
-    try {
-      const user = req.user!;
-      const { title, description, category, priority } = req.body;
-
-      // Generar folio único
-      const currentYear = new Date().getFullYear();
-      const ticketCount = await db
-        .select({ count: count() })
-        .from(supportTickets)
-        .where(sql`EXTRACT(YEAR FROM created_at) = ${currentYear}`);
-
-      const nextNumber = (ticketCount[0]?.count || 0) + 1;
-      const folio = `TK-${currentYear}-${nextNumber.toString().padStart(4, '0')}`;
-
-      const [newTicket] = await db
-        .insert(supportTickets)
-        .values({
-          folio,
-          title,
-          description,
-          category,
-          priority: priority || 'media',
-          status: 'pendiente',
-          createdBy: user.id,
-        })
-        .returning();
-
-      // Registrar en historial
-      await db.insert(ticketHistory).values({
-        ticketId: newTicket.id,
-        action: 'created',
-        description: 'Ticket creado',
-        newStatus: 'pendiente',
-        userId: user.id,
-      });
-
-      res.status(201).json(newTicket);
-    } catch (error) {
-      console.error("Error al crear ticket:", error);
-      res.status(500).json({ error: "Error interno del servidor" });
-    }
-  });
-
-  router.patch("/:id/status", async (req, res) => {
-    if (!req.isAuthenticated()) return res.status(401).json({ message: "Autenticación requerida" });
-
-    try {
-      const user = req.user!;
-
-      // Verificar que el usuario tiene permisos (solo área sistemas)
-      if (user.area !== 'sistemas') {
-        return res.status(403).json({ error: "Solo usuarios de Sistemas pueden aprobar o rechazar tickets" });
-      }
-
-      const ticketId = parseInt(req.params.id);
-      const { status } = req.body;
-
-      // Obtener ticket actual
-      const [currentTicket] = await db
-        .select()
-        .from(supportTickets)
-        .where(eq(supportTickets.id, ticketId));
-
-      if (!currentTicket) {
-        return res.status(404).json({ error: "Ticket no encontrado" });
-      }
-
-      // Actualizar ticket
-      const [updatedTicket] = await db
-        .update(supportTickets)
-        .set({
-          status,
-          updatedAt: new Date(),
-          ...(status === 'finalizado' ? { resolvedAt: new Date(), resolvedBy: user.id } : {})
-        })
-        .where(eq(supportTickets.id, ticketId))
-        .returning();
-
-      // Registrar en historial
-      await db.insert(ticketHistory).values({
-        ticketId,
-        action: 'status_updated',
-        description: `Estado cambiado de ${currentTicket.status} a ${status}`,
-        oldStatus: currentTicket.status,
-        newStatus: status,
-        userId: user.id,
-      });
-
-      res.json(updatedTicket);
-    } catch (error) {
-      console.error("Error al actualizar ticket:", error);
-      res.status(500).json({ error: "Error interno del servidor" });
-    }
-  });
-
-  app.use("/api/tickets", router);
-}

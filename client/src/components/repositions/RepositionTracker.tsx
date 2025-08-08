@@ -44,6 +44,18 @@ interface TrackingData {
     minutes: number;
   };
   areaTimes: Record<string, number>;
+  transfers?: Array<{
+    id: number;
+    fromArea: string;
+    toArea: string;
+    status: 'accepted' | 'rejected' | 'pending';
+    createdAt: string;
+    processedAt?: string;
+    transferredBy?: string;
+    processedBy?: string;
+    notes?: string;
+    consumoTela?: string;
+  }>;
 }
 
 export function RepositionTracker({ repositionId, onClose }: RepositionTrackerProps) {
@@ -217,11 +229,11 @@ export function RepositionTracker({ repositionId, onClose }: RepositionTrackerPr
                 </div>
                 <Progress value={trackingData.reposition.progress} className="h-2" />
                 <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-600">Área actual:</span>
+                  <span className="text-sm text-gray-600 dark:text-gray-300">Área actual:</span>
                   <Badge>{getAreaDisplayName(trackingData.reposition.currentArea)}</Badge>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-600">Estado:</span>
+                  <span className="text-sm text-gray-600 dark:text-gray-300">Estado:</span>
                   <Badge variant={trackingData.reposition.status === 'completado' ? 'default' : 'secondary'}>
                     {trackingData.reposition.status}
                   </Badge>
@@ -250,22 +262,22 @@ export function RepositionTracker({ repositionId, onClose }: RepositionTrackerPr
                     <div className="flex-1 min-w-0">
                       <div className={`p-4 rounded-lg border ${
                         step.status === 'current' 
-                          ? 'bg-blue-50 border-blue-200' 
+                          ? 'bg-blue-50 border-blue-200 dark:bg-blue-900/20 dark:border-blue-700' 
                           : step.status === 'completed'
-                          ? 'bg-green-50 border-green-200'
-                          : 'bg-gray-50 border-gray-200'
+                          ? 'bg-green-50 border-green-200 dark:bg-green-900/20 dark:border-green-700'
+                          : 'bg-gray-50 border-gray-200 dark:bg-slate-800 dark:border-slate-600'
                       }`}>
                         <div className="flex justify-between items-start">
                           <div>
                             <h4 className="font-medium">{getAreaDisplayName(step.area)}</h4>
                             {step.date && (
-                              <p className="text-sm text-gray-600 mt-1">
+                              <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">
                                 <Clock className="w-4 h-4 inline mr-1" />
                                 Fecha: {new Date(step.date).toLocaleDateString('es-ES')}
                               </p>
                             )}
                             {step.timestamp && !step.date && (
-                              <p className="text-sm text-gray-600 mt-1">
+                              <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">
                                 <Clock className="w-4 h-4 inline mr-1" />
                                 {formatDate(step.timestamp)}
                               </p>
@@ -277,7 +289,7 @@ export function RepositionTracker({ repositionId, onClose }: RepositionTrackerPr
                               </p>
                             )}
                             {step.user && (
-                              <p className="text-sm text-gray-600">
+                              <p className="text-sm text-gray-600 dark:text-gray-300">
                                 <User className="w-4 h-4 inline mr-1" />
                                 {step.user}
                               </p>
@@ -294,7 +306,7 @@ export function RepositionTracker({ repositionId, onClose }: RepositionTrackerPr
                           </Badge>
                         </div>
                         {step.notes && (
-                          <p className="text-sm text-gray-700 mt-2 bg-white p-2 rounded border">
+                          <p className="text-sm text-gray-700 dark:text-gray-300 mt-2 bg-white dark:bg-slate-800 p-2 rounded border border-gray-200 dark:border-slate-600">
                             {step.notes}
                           </p>
                         )}
@@ -315,7 +327,7 @@ export function RepositionTracker({ repositionId, onClose }: RepositionTrackerPr
               <div className="space-y-4">
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                   {trackingData.areaTimes && Object.entries(trackingData.areaTimes).map(([area, minutes]) => (
-                    <div key={area} className="bg-gray-50 p-3 rounded-lg">
+                    <div key={area} className="bg-gray-50 dark:bg-slate-800 p-3 rounded-lg border border-gray-200 dark:border-slate-600">
                       <h4 className="font-medium text-sm">{getAreaDisplayName(area)}</h4>
                       <p className="text-lg font-bold text-blue-600">
                         {Math.floor(minutes / 60)}h {Math.round(minutes % 60)}m
@@ -323,14 +335,14 @@ export function RepositionTracker({ repositionId, onClose }: RepositionTrackerPr
                     </div>
                   ))}
                 </div>
-                <div className="border-t pt-4">
+                <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
                   <div className="flex justify-between items-center">
                     <h3 className="text-lg font-semibold">Tiempo Total:</h3>
                     <div className="text-2xl font-bold text-green-600">
                       {trackingData.totalTime.formatted}
                     </div>
                   </div>
-                  <p className="text-sm text-gray-600 mt-1">
+                  <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">
                     Total de minutos: {Math.round(trackingData.totalTime.minutes)}
                   </p>
                 </div>
@@ -420,43 +432,39 @@ export function RepositionTracker({ repositionId, onClose }: RepositionTrackerPr
           )}
 
           {/* Historial de Movimientos */}
-          {trackingData.history && trackingData.history.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Clock className="w-5 h-5" />
-                  Historial de Movimientos
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {trackingData.history.map((entry: any) => (
-                    <div key={entry.id} className="flex items-start gap-4 p-3 bg-gray-50 rounded-lg">
-                      <div className="w-2 h-2 bg-purple-600 rounded-full mt-2"></div>
-                      <div className="flex-1">
-                        <p className="font-medium">{entry.description}</p>
-                        <p className="text-sm text-gray-600">
-                          {formatDate(entry.createdAt || entry.timestamp)}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Clock className="w-5 h-5" />
+                Historial de Movimientos
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {trackingData.history.map((entry: any) => (
+                  <div key={entry.id} className="flex items-start gap-4 p-3 bg-gray-50 dark:bg-slate-800 rounded-lg border border-gray-200 dark:border-slate-600">
+                    <div className="w-2 h-2 bg-purple-600 rounded-full mt-2"></div>
+                    <div className="flex-1">
+                      <p className="font-medium">{entry.description}</p>
+                      <p className="text-sm text-gray-600 dark:text-gray-300">
+                        {formatDate(entry.createdAt || entry.timestamp)}
+                      </p>
+                      {entry.userName && (
+                        <p className="text-xs text-gray-500 mt-1">
+                          Por: {entry.userName}
                         </p>
-                        {entry.userName && (
-                          <p className="text-xs text-gray-500 mt-1">
-                            Por: {entry.userName}
-                          </p>
-                        )}
-                        {entry.fromArea && entry.toArea && (
-                          <p className="text-sm text-purple-600">
-                            {getAreaDisplayName(entry.fromArea)} → {getAreaDisplayName(entry.toArea)}
-                          </p>
-                        )}
-                      </div>
+                      )}
+                      {entry.fromArea && entry.toArea && (
+                        <p className="text-sm text-purple-600">
+                          {getAreaDisplayName(entry.fromArea)} → {getAreaDisplayName(entry.toArea)}
+                        </p>
+                      )}
                     </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </DialogContent>
     </Dialog>

@@ -497,13 +497,12 @@ export default function AuthPage() {
                           <SelectItem value="patronaje" className="text-slate-900 dark:text-white hover:bg-slate-100 dark:hover:bg-slate-600 rounded-lg">Patronaje 📐</SelectItem>
                           <SelectItem value="almacen" className="text-slate-900 dark:text-white hover:bg-slate-100 dark:hover:bg-slate-600 rounded-lg">Almacén 🏪</SelectItem>
                           <SelectItem value="diseño" className="text-slate-900 dark:text-white hover:bg-slate-100 dark:hover:bg-slate-600 rounded-lg">Diseño 🎨</SelectItem>
-                          <SelectItem value="sistemas" className="text-slate-900 dark:text-white hover:bg-slate-100 dark:hover:bg-slate-600 rounded-lg">Sistemas 💻</SelectItem>
                           <SelectItem value="admin" className="text-slate-900 dark:text-white hover:bg-slate-100 dark:hover:bg-slate-600 rounded-lg">Admin ⚙️</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
 
-                    {registerData.area && registerData.area !== "admin" && registerData.area !== "sistemas" && (
+                    {registerData.area && registerData.area !== "admin" && (
                       <div className="space-y-2 animate-slide-down">
                         <Label htmlFor="admin-password" className="text-sm font-semibold text-orange-600 dark:text-orange-400 flex items-center gap-2">
                           <Shield className="w-4 h-4" />

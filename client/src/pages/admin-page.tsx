@@ -50,14 +50,14 @@ export default function AdminPage() {
   const [showSystemRestoreModal, setShowSystemRestoreModal] = useState(false);
   const [systemRestoreFile, setSystemRestoreFile] = useState<File | null>(null);
 
-  if (user?.area !== 'admin' && user?.area !== 'sistemas') {
+  if (user?.area !== 'admin') {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <Card className="max-w-md">
           <CardContent className="p-6 text-center">
             <Shield className="mx-auto h-12 w-12 text-red-500 mb-4" />
             <h2 className="text-xl font-semibold mb-2">Acceso Denegado</h2>
-            <p className="text-gray-600">Solo los administradores y usuarios de sistemas pueden acceder a esta página.</p>
+            <p className="text-gray-600">Solo los administradores pueden acceder a esta página.</p>
           </CardContent>
         </Card>
       </div>
@@ -478,8 +478,7 @@ export default function AdminPage() {
       admin: 'Admin',
       diseño: 'Diseño',
       patronaje: 'Patronaje',
-      operaciones: 'Operaciones',
-      sistemas: 'Sistemas'
+      operaciones: 'Operaciones'
     };
     return names[area] || area;
   };
@@ -496,8 +495,7 @@ export default function AdminPage() {
       almacen: "badge-almacen",
       diseño: "badge-diseño",
       patronaje: "bg-yellow-100 text-yellow-800",
-      operaciones: "badge-operaciones",
-      sistemas: "bg-blue-100 text-blue-800"
+      operaciones: "badge-operaciones"
     };
     return colors[area] || "badge-admin";
   };
@@ -663,7 +661,7 @@ export default function AdminPage() {
                           <SelectValue placeholder="Seleccionar área" />
                         </SelectTrigger>
                         <SelectContent>
-                          {["admin","corte","bordado","ensamble","plancha","calidad","envios", "diseño", "patronaje", "almacen", "operaciones", "sistemas"].map(a => (
+                          {["admin","corte","bordado","ensamble","plancha","calidad","envios", "diseño", "patronaje", "almacen", "operaciones"].map(a => (
                             <SelectItem key={a} value={a}>{getAreaDisplayName(a)}</SelectItem>
                           ))}
                         </SelectContent>
@@ -1119,7 +1117,7 @@ export default function AdminPage() {
               <div><Label>Área</Label>
                 <Select value={editForm.area} onValueChange={val => setEditForm({ ...editForm, area: val })}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>{["admin","corte","bordado","ensamble","plancha","calidad","envios", "diseño", "patronaje", "almacen", "operaciones", "sistemas"].map(a => (
+                  <SelectContent>{["admin","corte","bordado","ensamble","plancha","calidad","envios", "diseño", "patronaje", "almacen", "operaciones"].map(a => (
                     <SelectItem key={a} value={a}>{getAreaDisplayName(a)}</SelectItem>
                   ))}</SelectContent>
                 </Select>

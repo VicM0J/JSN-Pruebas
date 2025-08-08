@@ -57,15 +57,14 @@ class ErrorBoundary extends Component<
 import AuthPage from "@/pages/auth-page";
 import Dashboard from "@/pages/dashboard";
 import OrdersPage from "@/pages/orders-page";
+import AdminPage from "@/pages/admin-page";
+import NotFound from "@/pages/not-found";
 import RepositionsPage from "@/pages/repositions-page";
 import HistoryPage from "@/pages/history-page";
-import AdminPage from "@/pages/admin-page";
-import MetricsPage from "@/pages/metrics-page";
-import AgendaPage from "@/pages/agenda-page";
 import AlmacenPage from "@/pages/almacen-page";
-import SistemasPage from "@/pages/sistemas-page";
+import AgendaPage from "@/pages/agenda-page";
+import MetricsPage from "@/pages/metrics-page";
 import MaintenanceScreen from "@/components/maintenance/MaintenanceScreen";
-import NotFound from "@/pages/not-found";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -117,13 +116,12 @@ function AppContent() {
         </Route>
         <ProtectedRoute path="/dashboard" component={Dashboard} />
         <ProtectedRoute path="/orders" component={OrdersPage} />
+        <ProtectedRoute path="/admin" component={AdminPage} />
         <ProtectedRoute path="/repositions" component={RepositionsPage} />
         <ProtectedRoute path="/history" component={HistoryPage} />
-        <ProtectedRoute path="/admin" component={AdminPage} />
-        <ProtectedRoute path="/metrics" component={MetricsPage} />
-        <ProtectedRoute path="/agenda" component={AgendaPage} />
         <ProtectedRoute path="/almacen" component={AlmacenPage} />
-        <ProtectedRoute path="/sistemas" component={SistemasPage} />
+        <ProtectedRoute path="/agenda" component={AgendaPage} />
+        <ProtectedRoute path="/metrics" component={MetricsPage} />
         <Route component={NotFound} />
       </Switch>
       <Toaster />

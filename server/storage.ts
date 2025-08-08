@@ -827,18 +827,21 @@ export class DatabaseStorage implements IStorage {
         ];
 
     if (userId) {
-      // Si se proporciona userId, mostrar reposiciones del área actual O creadas por el usuario
+      // Si se proporciona userId, mostrar reposiciones del área actual O creadas por el área
       whereCondition = and(
         or(
           eq(repositions.currentArea, area),
-          eq(repositions.createdBy, userId)
+          eq(repositions.solicitanteArea, area)
         ),
         ...excludeStatuses
       );
     } else {
-      // Sin userId, solo mostrar del área actual
+      // Sin userId, mostrar reposiciones del área actual O creadas por el área
       whereCondition = and(
-        eq(repositions.currentArea, area),
+        or(
+          eq(repositions.currentArea, area),
+          eq(repositions.solicitanteArea, area)
+        ),
         ...excludeStatuses
       );
     }
