@@ -814,6 +814,15 @@ export class DatabaseStorage implements IStorage {
     return results;
   }
 
+  async getApprovedRepositions(): Promise<Reposition[]> {
+    return await db.select().from(repositions)
+      .where(and(
+        eq(repositions.status, 'aprobado' as RepositionStatus),
+        ne(repositions.status, 'eliminado' as RepositionStatus)
+      ))
+      .orderBy(desc(repositions.createdAt));
+  }
+
   async getRepositionsByArea(area: Area, userId?: number): Promise<Reposition[]> {
     let whereCondition;
 

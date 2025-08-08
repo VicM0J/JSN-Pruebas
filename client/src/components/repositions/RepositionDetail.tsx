@@ -286,22 +286,6 @@ export function RepositionDetail({
                 </Badge>
               </div>
               <div className="flex gap-2">
-                <Button 
-                  onClick={() => {
-                    queryClient.removeQueries({ queryKey: ['reposition', repositionId] });
-                    queryClient.removeQueries({ queryKey: ['reposition-pieces', repositionId] });
-                    queryClient.removeQueries({ queryKey: ['reposition-products', repositionId] });
-                    queryClient.refetchQueries({ queryKey: ['reposition', repositionId] });
-                    queryClient.refetchQueries({ queryKey: ['reposition-pieces', repositionId] });
-                    queryClient.refetchQueries({ queryKey: ['reposition-products', repositionId] });
-                  }}
-                  variant="outline"
-                  size="sm"
-                  className="text-green-600 border-green-600 hover:bg-green-50"
-                >
-                  <Activity className="w-4 h-4 mr-2" />
-                  Actualizar
-                </Button>
                 
                 {/* Botón de Editar para áreas de envíos y admin */}
                 {(user?.area === 'envios' || user?.area === 'admin') && (

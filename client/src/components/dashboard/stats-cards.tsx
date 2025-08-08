@@ -24,13 +24,20 @@ type Stats = {
   totalProcessingTime: number;
 };
 
-export function StatsCards() {
+interface StatsCardsProps {
+  areaFilter?: string;
+}
+
+export function StatsCards({ areaFilter = "all" }: StatsCardsProps) {
   const { user } = useAuth();
   
   const { data: stats, isLoading, error, isFetching, dataUpdatedAt } = useQuery<Stats>({
-    queryKey: ["/api/dashboard/reposition-stats"],
+    queryKey: ["/api/dashboard/reposition-stats", areaFilter],
     queryFn: async () => {
-      const response = await fetch("/api/dashboard/reposition-stats", {
+      const url = areaFilter && areaFilter !== "all" 
+        ? `/api/dashboard/reposition-stats?area=${areaFilter}`
+        : "/api/dashboard/reposition-stats";
+      const response = await fetch(url, {
         credentials: 'include'
       });
       
@@ -72,9 +79,9 @@ export function StatsCards() {
 
   if (error) {
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-8 gap-4 mb-6">
-        <Card className="col-span-full">
-          <CardContent className="p-4 text-center">
+      <div className="mb-8">
+        <Card className="w-full">
+          <CardContent className="p-6 text-center">
             <div className="text-red-600 font-semibold mb-2">
               Error al cargar estadísticas
             </div>
@@ -97,11 +104,11 @@ export function StatsCards() {
 
   if (isLoading) {
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-8 gap-4 mb-6">
-        {[...Array(8)].map((_, i) => (
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        {[...Array(4)].map((_, i) => (
           <Card key={i} className="animate-pulse">
-            <CardContent className="p-4">
-              <div className="h-20 bg-gradient-to-r from-purple-100 to-purple-200 rounded"></div>
+            <CardContent className="p-6">
+              <div className="h-24 bg-gradient-to-r from-purple-100 to-purple-200 rounded"></div>
             </CardContent>
           </Card>
         ))}
@@ -159,51 +166,56 @@ export function StatsCards() {
   const statsData = getStatsData();
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       {/* Indicador de actualización */}
-      <div className="flex items-center justify-between text-sm text-gray-500 dark:text-gray-400">
-        <div className="flex items-center gap-2">
-          <div className={`w-2 h-2 rounded-full ${isFetching ? 'bg-green-500 animate-pulse' : 'bg-gray-300'}`}></div>
-          <span>
-            {isFetching ? 'Actualizando...' : `Última actualización: ${new Date(dataUpdatedAt || Date.now()).toLocaleTimeString('es-ES')}`}
+      <div className="flex items-center justify-between text-sm text-gray-500 dark:text-gray-400 px-2">
+        <div className="flex items-center gap-3">
+          <div className={`w-3 h-3 rounded-full ${isFetching ? 'bg-green-500 animate-pulse shadow-sm' : 'bg-gray-300'}`}></div>
+          <span className="font-medium">
+            {isFetching ? 'Actualizando estadísticas...' : `Actualizado: ${new Date(dataUpdatedAt || Date.now()).toLocaleTimeString('es-ES')}`}
           </span>
         </div>
-        <span className="text-xs">Área: {user?.area?.toUpperCase()}</span>
+        <div className="flex items-center gap-3">
+          <span className="text-xs font-medium">
+            Filtro: {areaFilter === "all" ? "Todas las áreas" : areaFilter.charAt(0).toUpperCase() + areaFilter.slice(1)}
+          </span>
+          <span className="text-xs">Usuario: {user?.area?.toUpperCase()}</span>
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-8 gap-4 mb-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         {statsData.map((stat, index) => (
-        <Card key={index} className="hover:shadow-lg transition-all duration-300 border-0 shadow-md group bg-white dark:bg-slate-800">
-          <CardContent className="p-4">
-            <div className="flex flex-col space-y-3">
+        <Card key={index} className="hover:shadow-xl transition-all duration-300 border-0 shadow-lg group bg-white dark:bg-slate-800 hover:scale-105">
+          <CardContent className="p-6">
+            <div className="flex flex-col space-y-4">
               {/* Icono y valor principal */}
               <div className="flex items-center justify-between">
-                <div className={`w-12 h-12 ${stat.bgColor} dark:bg-opacity-20 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300`}>
-                  <stat.icon className={`${stat.iconColor} dark:text-opacity-80`} size={20} />
+                <div className={`w-14 h-14 ${stat.bgColor} dark:bg-opacity-20 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300 shadow-sm`}>
+                  <stat.icon className={`${stat.iconColor} dark:text-opacity-80`} size={24} />
                 </div>
                 <div className="text-right">
-                  <p className="text-2xl font-bold text-gray-900 dark:text-white group-hover:scale-105 transition-transform duration-300">
+                  <p className="text-3xl font-bold text-gray-900 dark:text-white group-hover:scale-105 transition-transform duration-300">
                     {stat.value}
                   </p>
                 </div>
               </div>
               
               {/* Título y descripción */}
-              <div className="space-y-1">
-                <p className="text-sm font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wide">
+              <div className="space-y-2">
+                <p className="text-sm font-semibold text-gray-700 dark:text-gray-200 uppercase tracking-wide">
                   {stat.title}
                 </p>
-                <p className="text-xs text-gray-500 dark:text-gray-400">
+                <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">
                   {stat.description}
                 </p>
               </div>
 
               {/* Barra de progreso visual */}
-              <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-1.5">
+              <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
                 <div 
-                  className={`bg-gradient-to-r ${stat.gradient} h-1.5 rounded-full transition-all duration-500 ease-out`}
+                  className={`bg-gradient-to-r ${stat.gradient} h-2 rounded-full transition-all duration-500 ease-out shadow-sm`}
                   style={{ 
-                    width: `${Math.min(Math.max((typeof stat.value === 'string' ? parseInt(stat.value) : stat.value) / 10 * 100, 10), 100)}%` 
+                    width: `${Math.min(Math.max((typeof stat.value === 'string' ? parseInt(stat.value) : stat.value) / 10 * 100, 15), 100)}%` 
                   }}
                 ></div>
               </div>

@@ -1372,12 +1372,6 @@ export function RepositionList({ userArea }: { userArea: string }) {
         <h1 className="text-3xl font-bold text-purple-800">
           {userArea === 'diseño' ? 'Reposiciones Aprobadas' : 'Solicitudes de Reposición'}
         </h1>
-        {userArea !== 'diseño' && (
-          <Button onClick={() => setShowForm(true)} className="bg-purple-600 hover:bg-purple-700">
-            <Plus className="w-4 h-4 mr-2" />
-            Nueva Solicitud
-          </Button>
-        )}
       </div>
 
       {/* Filtros */}
@@ -1447,7 +1441,7 @@ export function RepositionList({ userArea }: { userArea: string }) {
                 <SelectValue placeholder="Todas las áreas" />
               </SelectTrigger>
               <SelectContent className="bg-white dark:bg-slate-800 border-gray-300 dark:border-slate-700">
-                <SelectItem value="all" className="text-gray-900 dark:text-gray-100">Todas las áreas</SelectItem>
+                
                 {areas.map(area => (
                   <SelectItem key={area} value={area} className="text-gray-900 dark:text-gray-100">
                     {getAreaDisplayName(area)}

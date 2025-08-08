@@ -840,10 +840,10 @@ function registerDashboardRoutes(app: Express) {
 
       const user = req.user!;
       const repositions = await storage.getRepositions();
-      
+
       // Filtrar reposiciones no eliminadas para cálculos generales
       const activeRepositions = repositions.filter(r => r.status !== 'eliminado');
-      
+
       // Obtener reposiciones del área del usuario basado en currentArea
       let myAreaRepositions;
       if (user.area === 'admin' || user.area === 'envios') {
@@ -880,14 +880,14 @@ function registerDashboardRoutes(app: Express) {
       today.setHours(0, 0, 0, 0);
       const tomorrow = new Date(today);
       tomorrow.setDate(today.getDate() + 1);
-      
+
       const completedToday = activeRepositions.filter(r => {
         if (r.status !== 'completado') return false;
-        
+
         // Usar completedAt si existe, sino updated_at
         const completionDate = r.completedAt ? new Date(r.completedAt) : 
                               r.updated_at ? new Date(r.updated_at) : null;
-        
+
         return completionDate && completionDate >= today && completionDate < tomorrow;
       });
 
@@ -895,10 +895,10 @@ function registerDashboardRoutes(app: Express) {
       thisWeekStart.setDate(today.getDate() - today.getDay());
       const completedThisWeek = activeRepositions.filter(r => {
         if (r.status !== 'completado') return false;
-        
+
         const completionDate = r.completedAt ? new Date(r.completedAt) : 
                               r.updated_at ? new Date(r.updated_at) : null;
-        
+
         return completionDate && completionDate >= thisWeekStart;
       });
 
@@ -1075,17 +1075,26 @@ function registerRepositionRoutes(app: Express) {
       // Para diseño y almacén: solo mostrar reposiciones aprobadas
       if (user.area === 'diseño' || user.area === 'almacen') {
         console.log(`User is from ${user.area} area, filtering approved repositions`);
-        // Diseño puede ver todas las reposiciones aprobadas
-        repositions = await storage.getRepositions(undefined, 'diseño');
+        if (area && area !== 'all') {
+          // Con filtro de área específica
+          repositions = await storage.getRepositionsByArea(area as Area, user.id);
+        } else {
+          // Sin filtro de área - mostrar todas las aprobadas
+          repositions = await storage.getApprovedRepositions();
+        }
       }
       else if ((user.area === 'admin' || user.area === 'envios')) {
         if (area && area !== 'all') {
-          // Admin/envíos con filtro de área específica
+          // Con filtro específico
           repositions = await storage.getRepositionsByArea(area as Area, user.id);
         } else {
-          // Admin/envíos sin filtro de área (todas las reposiciones)
-          repositions = await storage.getAllRepositions(false);
+          // Admin/envíos ven todas las reposiciones
+          repositions = await storage.getRepositions();
         }
+      } 
+      else if (area === 'all') {
+        // Cuando seleccionan "todas las áreas", mostrar todas las aprobadas
+        repositions = await storage.getApprovedRepositions();
       }
       else if (area && area !== 'all') {
         // Otras áreas con filtro específico

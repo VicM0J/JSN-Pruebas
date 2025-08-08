@@ -4,11 +4,13 @@ import { Layout } from "@/components/layout/layout";
 import { StatsCards } from "@/components/dashboard/stats-cards";
 import { RecentActivity } from "@/components/dashboard/recent-activity";
 import { RepositionList } from "@/components/repositions/RepositionList";
+import { RepositionForm } from "@/components/repositions/RepositionForm";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Search, Plus, FileX, TrendingUp, Clock, AlertTriangle } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Search, Plus, FileX, TrendingUp, Clock, AlertTriangle, Filter } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { useQuery } from "@tanstack/react-query";
 
@@ -16,6 +18,13 @@ export default function Dashboard() {
   const { user, isLoading } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
   const [showCreateReposition, setShowCreateReposition] = useState(false);
+  const [areaFilter, setAreaFilter] = useState(() => {
+    // Por defecto mostrar el área del usuario, excepto admin y envios que ven todas
+    if (user?.area === 'admin' || user?.area === 'envios') {
+      return "all";
+    }
+    return user?.area || "all";
+  });
 
   // Consulta para obtener datos de resumen en tiempo real
   const { data: summary } = useQuery({
@@ -65,6 +74,11 @@ export default function Dashboard() {
     );
   }
 
+  // Set area filter to user's area by default (except for admin and envios who see all by default)
+  if (user && areaFilter === "all" && user.area && user.area !== 'admin' && user.area !== 'envios') {
+    setAreaFilter(user.area);
+  }
+
   const canCreateRepositions = user?.area === 'corte' || user?.area === 'bordado' || user?.area === 'ensamble' || user?.area === 'plancha' || user?.area === 'calidad' || user?.area === 'admin';
 
   const getWelcomeMessage = () => {
@@ -103,8 +117,17 @@ export default function Dashboard() {
             </div>
             
             <div className="flex flex-col items-end gap-3">
-             
-              
+              {/* Botón Nueva Solicitud */}
+              {canCreateRepositions && (
+                <Button
+                  onClick={() => setShowCreateReposition(true)}
+                  className="bg-green-600 hover:bg-green-700 text-white border-green-600 transition-all duration-200"
+                  size="sm"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Nueva Solicitud
+                </Button>
+              )}
               {/* Indicador de rendimiento */}
               {summary && (
                 <div className="text-right">
@@ -119,27 +142,10 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Barra de búsqueda mejorada */}
-        <Card className="bg-white dark:bg-slate-800 border-gray-200 dark:border-slate-700 shadow-sm">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-4">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                <Input
-                  type="text"
-                  placeholder="Buscar reposiciones por folio, solicitante, modelo..."
-                  className="pl-12 py-3 text-lg border-gray-300 dark:border-slate-600 focus:ring-2 focus:ring-purple-500"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                />
-              </div>
-
-            </div>
-          </CardContent>
-        </Card>
+        
 
         {/* Tarjetas de estadísticas dinámicas */}
-        <StatsCards />
+        <StatsCards areaFilter={areaFilter} />
 
 
         {/* Lista de reposiciones */}
@@ -147,9 +153,22 @@ export default function Dashboard() {
           <h3 className="text-xl font-semibold text-gray-800 dark:text-gray-200 mb-4 flex items-center gap-2">
             <FileX className="w-5 h-5" />
             Reposiciones Activas
+            <Badge variant="outline" className="ml-2">
+              {areaFilter === "all" ? "Todas las áreas" : 
+               areaFilter.charAt(0).toUpperCase() + areaFilter.slice(1)}
+            </Badge>
           </h3>
-          <RepositionList userArea={user.area} />
+          <RepositionList userArea={user.area} areaFilter={areaFilter} />
         </div>
+
+        {/* Modal para crear nueva reposición */}
+        {showCreateReposition && (
+          <RepositionForm
+            isOpen={showCreateReposition}
+            onClose={() => setShowCreateReposition(false)}
+            userArea={user.area || ''}
+          />
+        )}
       </div>
     </Layout>
   );
